@@ -1,0 +1,46 @@
+# Env / secrets
+/.env
+**/.env
+**/*.env
+/wordpress/html/wp-config.php
+
+# WordPress core (track only custom code)
+/wordpress/html/wp-admin/
+/wordpress/html/wp-includes/
+/wordpress/html/wp-content/*
+!/wordpress/html/wp-content/themes/
+!/wordpress/html/wp-content/themes/new_incrypted/
+!/wordpress/html/wp-content/themes/new_incrypted/**
+!/wordpress/html/wp-content/plugins/
+!/wordpress/html/wp-content/plugins/incrypted-site/
+!/wordpress/html/wp-content/plugins/incrypted-site/**
+!/wordpress/html/wp-content/mu-plugins/
+!/wordpress/html/wp-content/mu-plugins/**
+
+# WordPress uploads/cache/logs
+/wordpress/html/wp-content/uploads/
+/wordpress/html/wp-content/cache/
+/wordpress/html/wp-content/upgrade/
+/wordpress/html/wp-content/upgrade-temp-backup/
+/wordpress/html/wp-content/backups-dup-lite/
+/wordpress/html/wp-content/languages/
+/wordpress/html/wp-content/logs/
+/wordpress/html/wp-content/*.log
+/wordpress/html/wp-content/debug.log
+
+# Dependencies / build artifacts
+**/node_modules/
+**/vendor/
+**/dist/
+**/build/
+**/.cache/
+
+# Local data
+/db-import/
+/docs/
+/REPORT.md
+/UPGRADES.md
+
+# OS
+.DS_Store
+Thumbs.db

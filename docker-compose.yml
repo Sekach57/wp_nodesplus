@@ -1,0 +1,33 @@
+services:
+  mariadb:
+    image: mariadb:10.6
+    container_name: nodesplus_mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+
+  wordpress:
+    image: wordpress:php8.2-apache
+    container_name: nodesplus_wp
+    depends_on:
+      - mariadb
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: mariadb
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./wordpress/html:/var/www/html
+    ports:
+      - "8080:80"
+
+volumes:
+  db_data:
