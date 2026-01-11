@@ -4,16 +4,22 @@
 **/*.env
 /wordpress/html/wp-config.php
 
-# WordPress core (track only custom code)\n/wordpress/html/*\n!/wordpress/html/wp-content/\n/wordpress/html/wp-admin/
+# WordPress core (track only custom code)
+/wordpress/html/*
+!/wordpress/html/wp-content/
+/wordpress/html/wp-admin/
 /wordpress/html/wp-includes/
 /wordpress/html/wp-content/*
 !/wordpress/html/wp-content/themes/
+/wordpress/html/wp-content/themes/*
 !/wordpress/html/wp-content/themes/new_incrypted/
 !/wordpress/html/wp-content/themes/new_incrypted/**
 !/wordpress/html/wp-content/plugins/
+/wordpress/html/wp-content/plugins/*
 !/wordpress/html/wp-content/plugins/incrypted-site/
 !/wordpress/html/wp-content/plugins/incrypted-site/**
 !/wordpress/html/wp-content/mu-plugins/
+/wordpress/html/wp-content/mu-plugins/*
 !/wordpress/html/wp-content/mu-plugins/**
 
 # WordPress uploads/cache/logs
@@ -34,7 +40,15 @@
 **/build/
 **/.cache/
 
-# Local data\n/db-import/\n/docs/\n/REPORT.md\n/UPGRADES.md\n/telegram-bot/bot.log\n/telegram-bot/data/*.json\n
+# Local data
+/db-import/
+/docs/
+/REPORT.md
+/UPGRADES.md
+/telegram-bot/bot.log
+/telegram-bot/data/
+/telegram-bot/data/*.json
+
 # OS
 .DS_Store
 Thumbs.db
