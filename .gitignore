@@ -4,8 +4,7 @@
 **/*.env
 /wordpress/html/wp-config.php
 
-# WordPress core (track only custom code)
-/wordpress/html/wp-admin/
+# WordPress core (track only custom code)\n/wordpress/html/*\n!/wordpress/html/wp-content/\n/wordpress/html/wp-admin/
 /wordpress/html/wp-includes/
 /wordpress/html/wp-content/*
 !/wordpress/html/wp-content/themes/
