@@ -56,8 +56,20 @@ class INCR_Telegram_Links {
 
     public static function check_secret( WP_REST_Request $request ) {
         $secret = '';
-        if ( defined( 'INCR_TELEGRAM_BOT_SECRET' ) ) {
+        if ( function_exists( 'incr_get_config' ) ) {
+            $secret = incr_get_config( 'INCR_TELEGRAM_BOT_SECRET', '', 'NP_BOT_SECRET' );
+        } elseif ( defined( 'INCR_TELEGRAM_BOT_SECRET' ) ) {
             $secret = INCR_TELEGRAM_BOT_SECRET;
+        } else {
+            $env_value = getenv( 'NP_BOT_SECRET' );
+            if ( $env_value !== false ) {
+                $secret = $env_value;
+            } else {
+                $env_value = getenv( 'INCR_TELEGRAM_BOT_SECRET' );
+                if ( $env_value !== false ) {
+                    $secret = $env_value;
+                }
+            }
         }
         $secret = apply_filters( 'incr_telegram_bot_secret', $secret );
         $secret = trim( (string) $secret );

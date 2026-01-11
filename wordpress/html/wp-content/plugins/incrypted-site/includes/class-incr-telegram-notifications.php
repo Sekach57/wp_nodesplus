@@ -57,9 +57,15 @@ class INCR_Telegram_Notifications {
     }
 
     private static function get_bot_token() {
-        $token = '';
-        if ( defined( 'INCR_TELEGRAM_BOT_TOKEN' ) ) {
+        $token = function_exists( 'incr_get_config' ) ? incr_get_config( 'INCR_TELEGRAM_BOT_TOKEN' ) : '';
+        if ( $token === '' && defined( 'INCR_TELEGRAM_BOT_TOKEN' ) ) {
             $token = INCR_TELEGRAM_BOT_TOKEN;
+        }
+        if ( $token === '' ) {
+            $env_value = getenv( 'INCR_TELEGRAM_BOT_TOKEN' );
+            if ( $env_value !== false ) {
+                $token = $env_value;
+            }
         }
         $token = apply_filters( 'incr_telegram_bot_token', $token );
         return trim( (string) $token );

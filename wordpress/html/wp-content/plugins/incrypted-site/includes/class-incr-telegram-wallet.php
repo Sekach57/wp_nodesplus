@@ -82,7 +82,21 @@ class INCR_Telegram_Wallet {
             return INCR_Telegram_Links::check_secret( $request );
         }
 
-        $secret = defined( 'INCR_TELEGRAM_BOT_SECRET' ) ? INCR_TELEGRAM_BOT_SECRET : '';
+        $secret = function_exists( 'incr_get_config' ) ? incr_get_config( 'INCR_TELEGRAM_BOT_SECRET', '', 'NP_BOT_SECRET' ) : '';
+        if ( $secret === '' && defined( 'INCR_TELEGRAM_BOT_SECRET' ) ) {
+            $secret = INCR_TELEGRAM_BOT_SECRET;
+        }
+        if ( $secret === '' ) {
+            $env_value = getenv( 'NP_BOT_SECRET' );
+            if ( $env_value !== false ) {
+                $secret = $env_value;
+            } else {
+                $env_value = getenv( 'INCR_TELEGRAM_BOT_SECRET' );
+                if ( $env_value !== false ) {
+                    $secret = $env_value;
+                }
+            }
+        }
         $secret = apply_filters( 'incr_telegram_bot_secret', $secret );
         $secret = trim( (string) $secret );
 
@@ -117,7 +131,16 @@ class INCR_Telegram_Wallet {
     }
 
     private static function get_bot_token() {
-        $token = defined( 'INCR_TELEGRAM_BOT_TOKEN' ) ? INCR_TELEGRAM_BOT_TOKEN : '';
+        $token = function_exists( 'incr_get_config' ) ? incr_get_config( 'INCR_TELEGRAM_BOT_TOKEN' ) : '';
+        if ( $token === '' && defined( 'INCR_TELEGRAM_BOT_TOKEN' ) ) {
+            $token = INCR_TELEGRAM_BOT_TOKEN;
+        }
+        if ( $token === '' ) {
+            $env_value = getenv( 'INCR_TELEGRAM_BOT_TOKEN' );
+            if ( $env_value !== false ) {
+                $token = $env_value;
+            }
+        }
         $token = apply_filters( 'incr_telegram_bot_token', $token );
         return trim( (string) $token );
     }

@@ -120,6 +120,24 @@ class ProductRenewalSystem
     }
 }
 
+function incr_theme_get_config( $key, $default = '', $env_key = '' ) {
+    if ( function_exists( 'incr_get_config' ) ) {
+        return incr_get_config( $key, $default, $env_key );
+    }
+    if ( defined( $key ) ) {
+        $value = constant( $key );
+        if ( $value !== '' ) {
+            return $value;
+        }
+    }
+    $env_key = $env_key !== '' ? $env_key : $key;
+    $env_value = getenv( $env_key );
+    if ( $env_value !== false && $env_value !== '' ) {
+        return $env_value;
+    }
+    return $default;
+}
+
 add_action('wp_ajax_add_renewal_products_to_cart', 'handle_renewal_products_ajax');
 add_action('wp_ajax_nopriv_add_renewal_products_to_cart', 'handle_renewal_products_ajax');
 
@@ -334,9 +352,9 @@ function proceed_paid_order($order_id): void
         return;
     }
 
-    $request_url = defined('INCR_IMPORT_URL') ? INCR_IMPORT_URL : '';
+    $request_url = incr_theme_get_config( 'INCR_IMPORT_URL' );
     // if (get_current_user_id() == 198833) {
-    //     $request_url = defined('INCR_IMPORT_URL_DEV') ? INCR_IMPORT_URL_DEV : '';
+    //     $request_url = incr_theme_get_config( 'INCR_IMPORT_URL_DEV' );
     // }
     makeRequest("POST", $request_url, $data);
 }
@@ -355,7 +373,7 @@ function getNodesByUserID($user_id, $trigger_call = false){
         }
     }
 
-    $api_base = defined('INCR_API_BASE') ? INCR_API_BASE : '';
+    $api_base = incr_theme_get_config( 'INCR_API_BASE' );
     $request_url = $api_base ? $api_base . '/clients/' . $user_id . '/nodes/' : '';
     if ($request_url === '') {
         error_log('INCR nodes API base missing for user ' . $user_id);
@@ -420,7 +438,11 @@ function check_bearer_auth(WP_REST_Request $request) {
     if (!$auth_header) {
         return new WP_Error('no_auth_header', 'Authorization header missing', ['status' => 401]);
     }
-    if ($auth_header !== INCR_AUTH_TOKEN) {
+    $auth_token = incr_theme_get_config( 'INCR_AUTH_TOKEN' );
+    if ( $auth_token === '' ) {
+        return new WP_Error( 'missing_auth_token', 'Authorization token missing', [ 'status' => 500 ] );
+    }
+    if ($auth_header !== $auth_token) {
         return new WP_Error('invalid_token', 'Invalid token', ['status' => 403]);
     }
 
@@ -492,7 +514,19 @@ function makeRequest(string $method, string $url, ?array $data = null, $authToke
         $log('Request Data: ' . json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }
 
-    $authToken = defined('INCR_AUTH_TOKEN') ? INCR_AUTH_TOKEN : '';
+    $dry_run_flag = strtolower( incr_theme_get_config( 'INCR_DRY_RUN_IMPORTS' ) );
+    if (
+        $method === 'POST'
+        && $data
+        && function_exists( 'np_env' )
+        && np_env() !== 'prod'
+        && in_array( $dry_run_flag, [ '1', 'true', 'yes' ], true )
+    ) {
+        $log('Dry-run enabled: skipping outbound POST.');
+        return null;
+    }
+
+    $authToken = incr_theme_get_config( 'INCR_AUTH_TOKEN' );
     if ($authTokenSub) $authToken = $authTokenSub;
     $ch = curl_init($url);
 

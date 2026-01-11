@@ -22,6 +22,8 @@ require_once INCR_SITE_PLUGIN_DIR . 'includes/class-incr-telegram-links.php';
 require_once INCR_SITE_PLUGIN_DIR . 'includes/class-incr-telegram-notifications.php';
 require_once INCR_SITE_PLUGIN_DIR . 'includes/class-incr-telegram-wallet.php';
 
+add_action( 'admin_notices', 'incr_config_admin_notice' );
+
 function incr_nodes_store_activate() {
     if ( class_exists( 'INCR_Nodes_Store' ) ) {
         INCR_Nodes_Store::create_table();

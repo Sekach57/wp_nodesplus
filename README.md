@@ -26,6 +26,10 @@ Tracked code:
    ```
 4) Open http://localhost:8080
 
+## Environment config
+- Copy `.env.example` to `.env` and fill values for your environment.
+- Add matching `define()` calls in `wordpress/html/wp-config.php` using `getenv()` (do not commit `wp-config.php`).
+
 ## Telegram bot (local)
 1) Configure bot env:
    ```bash

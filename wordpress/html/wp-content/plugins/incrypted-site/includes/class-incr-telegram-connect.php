@@ -51,9 +51,15 @@ class INCR_Telegram_Connect {
             return new WP_Error( 'nodesplus_telegram_auth', 'Authentication required.', [ 'status' => 401 ] );
         }
 
-        $bot_username = '';
-        if ( defined( 'INCR_TELEGRAM_BOT_USERNAME' ) ) {
+        $bot_username = function_exists( 'incr_get_config' ) ? incr_get_config( 'INCR_TELEGRAM_BOT_USERNAME' ) : '';
+        if ( $bot_username === '' && defined( 'INCR_TELEGRAM_BOT_USERNAME' ) ) {
             $bot_username = INCR_TELEGRAM_BOT_USERNAME;
+        }
+        if ( $bot_username === '' ) {
+            $env_value = getenv( 'INCR_TELEGRAM_BOT_USERNAME' );
+            if ( $env_value !== false ) {
+                $bot_username = $env_value;
+            }
         }
         $bot_username = apply_filters( 'incr_telegram_bot_username', $bot_username );
         $bot_username = trim( (string) $bot_username );
