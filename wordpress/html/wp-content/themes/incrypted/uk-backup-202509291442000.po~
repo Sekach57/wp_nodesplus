@@ -1,0 +1,219 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: incrypted\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-29 14:40+0000\n"
+"PO-Revision-Date: 2025-09-29 14:40+0000\n"
+"Last-Translator: \n"
+"Language-Team: Українська\n"
+"Language: uk\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10 >= 2 && "
+"n%10<=4 &&(n%100<10||n%100 >= 20)? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.8.0; wp-6.8.2; php-8.0.22\n"
+"X-Domain: incrypted"
+
+#: WOO-customization/nodes-functionality.php:206
+#: WOO-customization/nodes-functionality.php:221
+msgid "Action"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:90
+msgid "Add for prolongation"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:382
+msgid "Added to cart"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:105
+msgid "Auth token invalid!"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:533
+msgid "Client not found or has no nodes"
+msgstr ""
+
+#: comments.php:68
+msgid "Comments are closed."
+msgstr ""
+
+#. 1: comment count number, 2: title.
+#: comments.php:41
+#, php-format
+msgctxt "comments title"
+msgid "%1$s thought on &ldquo;%2$s&rdquo;"
+msgid_plural "%1$s thoughts on &ldquo;%2$s&rdquo;"
+msgstr[0] ""
+msgstr[1] ""
+
+#. %s: Name of current post. Only visible to screen readers
+#: template-parts/content.php:40
+#, php-format
+msgid "Continue reading<span class=\"screen-reader-text\"> \"%s\"</span>"
+msgstr ""
+
+#. Description of the theme
+msgid "Description"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:88
+msgid "Deselect all"
+msgstr ""
+
+#. URI of the theme
+#. Author URI of the theme
+msgid "http://underscores.me/"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:390
+msgid "Incorrect parameters"
+msgstr ""
+
+#. Name of the theme
+msgid "incrypted"
+msgstr ""
+
+#: 404.php:21
+msgid ""
+"It looks like nothing was found at this location. Maybe try one of the links "
+"below or a search?"
+msgstr ""
+
+#: template-parts/content-none.php:44
+msgid ""
+"It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps "
+"searching can help."
+msgstr ""
+
+#: search.php:22 WOO-customization/nodes-functionality.php:535
+msgid "Looks like you don’t have any nodes yet"
+msgstr ""
+
+#: 404.php:30
+msgid "Most Used Categories"
+msgstr ""
+
+#: single.php:24
+msgid "Next:"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:524
+msgid "Nodes"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:176
+msgid "Nodes added"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:110
+msgid "Nodes are not selected"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:193
+msgid "Nodes were not added to cart"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:58
+msgid "Nodes were not found"
+msgstr ""
+
+#: template-parts/content-none.php:14
+msgid "Nothing Found"
+msgstr ""
+
+#. 1: title.
+#: comments.php:35
+#, php-format
+msgid "One thought on &ldquo;%1$s&rdquo;"
+msgstr ""
+
+#: 404.php:17
+msgid "Oops! That page can&rsquo;t be found."
+msgstr ""
+
+#: template-parts/content.php:53
+msgid "Pages:"
+msgstr ""
+
+#: single.php:23
+msgid "Previous:"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:81
+msgid "Price"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:207
+#: WOO-customization/nodes-functionality.php:236
+msgid "Prolongation"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:222
+#: WOO-customization/nodes-functionality.php:237
+msgid "Purchase"
+msgstr ""
+
+#. 1: link to WP admin new post page.
+#: template-parts/content-none.php:24
+#, php-format
+msgid ""
+"Ready to publish your first post? <a href=\"%1$s\">Get started here</a>."
+msgstr ""
+
+#. %s: search query.
+#: search.php:21
+#, php-format
+msgid "Search Results for: %s"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:87
+msgid "Select all"
+msgstr ""
+
+#: page.php:21
+msgid "Select nodes"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:183
+msgid "Skipped"
+msgstr ""
+
+#: template-parts/content-none.php:37
+msgid ""
+"Sorry, but nothing matched your search terms. Please try again with some "
+"different keywords."
+msgstr ""
+
+#: woocommerce/myaccount/dashboard.php:69
+msgid "Subscribed"
+msgstr ""
+
+#: woocommerce/myaccount/dashboard.php:55
+msgid "Total Nodes"
+msgstr ""
+
+#. %1$s: smiley
+#: 404.php:48
+#, php-format
+msgid "Try looking in the monthly archives. %1$s"
+msgstr ""
+
+#. Author of the theme
+msgid "Underscores.me"
+msgstr ""
+
+#: woocommerce/myaccount/dashboard.php:74
+msgid "Unsubscribed"
+msgstr ""
+
+#: woocommerce/myaccount/dashboard.php:60
+msgid "Your balance"
+msgstr ""
+
+#: WOO-customization/nodes-functionality.php:64
+msgid "Your nodes"
+msgstr ""

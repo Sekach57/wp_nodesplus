@@ -12,8 +12,8 @@
 /wordpress/html/wp-content/*
 !/wordpress/html/wp-content/themes/
 /wordpress/html/wp-content/themes/*
-!/wordpress/html/wp-content/themes/new_incrypted/
-!/wordpress/html/wp-content/themes/new_incrypted/**
+!/wordpress/html/wp-content/themes/incrypted/
+!/wordpress/html/wp-content/themes/incrypted/**
 !/wordpress/html/wp-content/plugins/
 /wordpress/html/wp-content/plugins/*
 !/wordpress/html/wp-content/plugins/incrypted-site/
