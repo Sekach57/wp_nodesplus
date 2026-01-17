@@ -38,7 +38,6 @@ BOT_SECRET=your_shared_secret
 ## Bot commands
 
 - `/nodes` - Fetch active nodes and due dates from the site.
-- Inline buttons - Approve/decline wallet charges when prompted.
 
 ## Set webhook (curl)
 

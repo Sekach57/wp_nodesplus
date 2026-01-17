@@ -60,6 +60,8 @@ function incrypted_scripts() {
     wp_localize_script( 'incrypted-scripts', 'npNodeDetails', [
         'ajax_url' => admin_url( 'admin-ajax.php' ),
         'nonce' => wp_create_nonce( 'np_node_details' ),
+        'rest_url' => esc_url_raw( rest_url() ),
+        'rest_nonce' => wp_create_nonce( 'wp_rest' ),
     ] );
 }
 add_action( 'wp_enqueue_scripts', 'incrypted_scripts' );

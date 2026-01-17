@@ -368,7 +368,47 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   });
 
+  const telegramConnectButtons = document.querySelectorAll('.js-telegram-connect');
+  telegramConnectButtons.forEach(btn => {
+    btn.addEventListener('click', async function (e) {
+      e.preventDefault();
 
+      if (!window.npNodeDetails || !npNodeDetails.rest_url || !npNodeDetails.rest_nonce) {
+        alert('Telegram connect is not configured.');
+        return;
+      }
+
+      if (btn.disabled) {
+        return;
+      }
+
+      btn.disabled = true;
+      btn.classList.add('is-loading');
+
+      try {
+        const response = await fetch(npNodeDetails.rest_url + 'nodesplus/v1/telegram/connect', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce': npNodeDetails.rest_nonce
+          },
+          body: JSON.stringify({})
+        });
+        const data = await response.json();
+        if (response.ok && data && data.redirect_url) {
+          window.location.href = data.redirect_url;
+          return;
+        }
+        const message = data && data.message ? data.message : 'Unable to connect Telegram.';
+        alert(message);
+      } catch (err) {
+        alert('Unable to connect Telegram.');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+      }
+    });
+  });
 });
 
 

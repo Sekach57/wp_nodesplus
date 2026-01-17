@@ -129,48 +129,6 @@ def fetch_nodes_for_chat(chat_id):
         return False, str(exc)
 
 
-def answer_callback_query(callback_id, text=None):
-    url = "https://api.telegram.org/bot{0}/answerCallbackQuery".format(BOT_TOKEN)
-    payload = {"callback_query_id": callback_id}
-    if text:
-        payload["text"] = text
-        payload["show_alert"] = False
-    req = Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
-    try:
-        with urlopen(req, timeout=10) as resp:
-            resp.read()
-    except (HTTPError, URLError):
-        return False
-    return True
-
-
-def handle_charge_action(intent_id, action):
-    if not WP_BASE_URL or not BOT_SECRET:
-        return False, "Missing WP_BASE_URL or BOT_SECRET"
-
-    url = WP_BASE_URL.rstrip("/") + "/wp-json/nodesplus/v1/telegram/charge"
-    payload = json.dumps({
-        "intent_id": intent_id,
-        "action": action,
-    }).encode("utf-8")
-    req = Request(
-        url,
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "X-NP-BOT-SECRET": BOT_SECRET,
-        },
-    )
-    try:
-        with urlopen(req, timeout=10) as resp:
-            body = resp.read().decode("utf-8")
-            if 200 <= resp.status < 300:
-                return True, body
-            return False, body
-    except (HTTPError, URLError) as exc:
-        return False, str(exc)
-
-
 class WebhookHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path != WEBHOOK_PATH:
@@ -209,26 +167,6 @@ def parse_start_payload(text):
 def handle_update(update):
     callback = update.get("callback_query")
     if callback:
-        data = callback.get("data", "")
-        callback_id = callback.get("id")
-        message = callback.get("message", {})
-        chat = message.get("chat", {})
-        chat_id = chat.get("id")
-        if isinstance(data, str) and data.startswith("charge:"):
-            parts = data.split(":")
-            if len(parts) == 3:
-                action = parts[1]
-                intent_id = int(parts[2])
-                ok, info = handle_charge_action(intent_id, "approve" if action == "yes" else "decline")
-                if ok:
-                    answer_callback_query(callback_id, "Updated")
-                    if action == "yes":
-                        send_message(BOT_TOKEN, chat_id, "✅ Wallet charged for node renewals.")
-                    else:
-                        send_message(BOT_TOKEN, chat_id, "Okay, no charge applied.")
-                else:
-                    answer_callback_query(callback_id, "Failed")
-                    send_message(BOT_TOKEN, chat_id, "❌ Unable to process request. Please try again.")
         return
 
     message = update.get("message") or update.get("edited_message")

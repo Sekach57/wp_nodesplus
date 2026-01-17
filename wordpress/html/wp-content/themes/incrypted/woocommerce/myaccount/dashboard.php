@@ -34,11 +34,51 @@ $discord_status = $discord_connected ? __( 'Connected', 'incrypted' ) : __( 'Not
 $discord_action = $discord_connected ? __( 'Disconnect', 'incrypted' ) : __( 'Connect', 'incrypted' );
 $discord_status_class = $discord_connected ? 'is-connected' : 'is-disconnected';
 
-// Telegram - Under construction
+// Telegram
 $telegram_connected = false;
-$telegram_status = __( 'Under construction', 'incrypted' );
-$telegram_action = __( 'Coming soon', 'incrypted' );
+$telegram_status = __( 'Not connected', 'incrypted' );
+$telegram_action = __( 'Connect', 'incrypted' );
 $telegram_status_class = 'is-disconnected';
+$telegram_configured = false;
+$bot_username = '';
+if ( function_exists( 'incr_get_config' ) ) {
+    $bot_username = incr_get_config( 'INCR_TELEGRAM_BOT_USERNAME' );
+}
+if ( $bot_username === '' && defined( 'INCR_TELEGRAM_BOT_USERNAME' ) ) {
+    $bot_username = INCR_TELEGRAM_BOT_USERNAME;
+}
+if ( $bot_username === '' ) {
+    $env_value = getenv( 'INCR_TELEGRAM_BOT_USERNAME' );
+    if ( $env_value !== false ) {
+        $bot_username = $env_value;
+    }
+}
+$bot_username = trim( (string) $bot_username );
+$telegram_configured = $bot_username !== '';
+
+if ( $telegram_configured ) {
+    global $wpdb;
+    $links_table = $wpdb->prefix . 'incr_telegram_links';
+    $existing = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $links_table ) );
+    if ( $existing === $links_table ) {
+        $linked_user = $wpdb->get_var(
+            $wpdb->prepare( "SELECT wp_user_id FROM {$links_table} WHERE wp_user_id = %d", $user_id )
+        );
+        if ( $linked_user ) {
+            $telegram_connected = true;
+        }
+    }
+}
+
+if ( $telegram_connected ) {
+    $telegram_status = __( 'Connected', 'incrypted' );
+    $telegram_action = __( 'Connected', 'incrypted' );
+    $telegram_status_class = 'is-connected';
+} elseif ( ! $telegram_configured ) {
+    $telegram_status = __( 'Unavailable', 'incrypted' );
+    $telegram_action = __( 'Unavailable', 'incrypted' );
+    $telegram_status_class = 'is-disconnected';
+}
 
 // Twitter - Under construction
 $twitter_connected = false;
@@ -128,9 +168,19 @@ if ( is_array( $user_nodes ) && ! isset( $user_nodes['detail'] ) ) {
             <?php echo esc_html( $telegram_status ); ?>
         </div>
         <div class="dashboard-card__action">
-            <button type="button" class="dashboard-card__button" disabled style="opacity: 0.6; cursor: not-allowed;">
-                <?php echo esc_html( $telegram_action ); ?>
-            </button>
+            <?php if ( $telegram_connected ) : ?>
+                <button type="button" class="dashboard-card__button" disabled aria-disabled="true">
+                    <?php echo esc_html( $telegram_action ); ?>
+                </button>
+            <?php elseif ( ! $telegram_configured ) : ?>
+                <button type="button" class="dashboard-card__button" disabled aria-disabled="true">
+                    <?php echo esc_html( $telegram_action ); ?>
+                </button>
+            <?php else : ?>
+                <button type="button" class="dashboard-card__button js-telegram-connect">
+                    <?php echo esc_html( $telegram_action ); ?>
+                </button>
+            <?php endif; ?>
         </div>
     </div>
 
