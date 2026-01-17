@@ -409,6 +409,52 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   });
+
+  const telegramDisconnectButtons = document.querySelectorAll('.js-telegram-disconnect');
+  telegramDisconnectButtons.forEach(btn => {
+    btn.addEventListener('click', async function (e) {
+      e.preventDefault();
+
+      if (!window.npNodeDetails || !npNodeDetails.rest_url || !npNodeDetails.rest_nonce) {
+        alert('Telegram disconnect is not configured.');
+        return;
+      }
+
+      if (!confirm('Disconnect Telegram from your account?')) {
+        return;
+      }
+
+      if (btn.disabled) {
+        return;
+      }
+
+      btn.disabled = true;
+      btn.classList.add('is-loading');
+
+      try {
+        const response = await fetch(npNodeDetails.rest_url + 'nodesplus/v1/telegram/disconnect', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce': npNodeDetails.rest_nonce
+          },
+          body: JSON.stringify({})
+        });
+        const data = await response.json();
+        if (response.ok && data && data.disconnected) {
+          window.location.reload();
+          return;
+        }
+        const message = data && data.message ? data.message : 'Unable to disconnect Telegram.';
+        alert(message);
+      } catch (err) {
+        alert('Unable to disconnect Telegram.');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+      }
+    });
+  });
 });
 
 

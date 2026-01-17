@@ -169,8 +169,8 @@ if ( is_array( $user_nodes ) && ! isset( $user_nodes['detail'] ) ) {
         </div>
         <div class="dashboard-card__action">
             <?php if ( $telegram_connected ) : ?>
-                <button type="button" class="dashboard-card__button" disabled aria-disabled="true">
-                    <?php echo esc_html( $telegram_action ); ?>
+                <button type="button" class="dashboard-card__button js-telegram-disconnect">
+                    <?php esc_html_e( 'Disconnect', 'incrypted' ); ?>
                 </button>
             <?php elseif ( ! $telegram_configured ) : ?>
                 <button type="button" class="dashboard-card__button" disabled aria-disabled="true">

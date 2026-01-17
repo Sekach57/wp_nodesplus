@@ -52,6 +52,18 @@ class INCR_Telegram_Links {
                 'permission_callback' => [ __CLASS__, 'check_secret' ],
             ]
         );
+
+        register_rest_route(
+            'nodesplus/v1',
+            '/telegram/disconnect',
+            [
+                'methods' => 'POST',
+                'callback' => [ __CLASS__, 'handle_disconnect' ],
+                'permission_callback' => function () {
+                    return is_user_logged_in();
+                },
+            ]
+        );
     }
 
     public static function check_secret( WP_REST_Request $request ) {
@@ -261,5 +273,24 @@ class INCR_Telegram_Links {
         }
 
         return new WP_REST_Response( [ 'nodes' => $nodes ], 200 );
+    }
+
+    public static function handle_disconnect( WP_REST_Request $request ) {
+        $user_id = get_current_user_id();
+        if ( ! $user_id ) {
+            return new WP_Error( 'nodesplus_telegram_auth', 'Authentication required.', [ 'status' => 401 ] );
+        }
+
+        self::ensure_table( self::links_table_name(), [ __CLASS__, 'create_table' ] );
+
+        global $wpdb;
+        $links_table = self::links_table_name();
+        $deleted = $wpdb->delete( $links_table, [ 'wp_user_id' => (int) $user_id ], [ '%d' ] );
+
+        if ( $deleted === false ) {
+            return new WP_Error( 'nodesplus_telegram_store', 'Unable to disconnect Telegram.', [ 'status' => 500 ] );
+        }
+
+        return new WP_REST_Response( [ 'disconnected' => (bool) $deleted ], 200 );
     }
 }
