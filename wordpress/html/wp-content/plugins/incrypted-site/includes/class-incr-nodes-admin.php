@@ -31,6 +31,14 @@ class INCR_Nodes_Admin {
             'incr-nodes-dashboard',
             [__CLASS__, 'render_dashboard']
         );
+        add_submenu_page(
+            'incr-nodes-dashboard',
+            'Telegram Links',
+            'Telegram Links',
+            'manage_options',
+            'incr-telegram-links',
+            [__CLASS__, 'render_telegram_links']
+        );
     }
 
     public static function handle_refresh_user_nodes() {
@@ -432,6 +440,94 @@ class INCR_Nodes_Admin {
             target.style.display = target.style.display === "table-row" ? "none" : "table-row";
         });
         </script>';
+
+        echo '</div>';
+    }
+
+    public static function render_telegram_links() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
+        }
+
+        global $wpdb;
+        $links_table = $wpdb->prefix . 'incr_telegram_links';
+        $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $links_table));
+
+        echo '<div class="wrap">';
+        echo '<h1>Telegram Links</h1>';
+
+        if ($table_exists !== $links_table) {
+            echo '<div class="notice notice-warning"><p>Telegram links table not found.</p></div>';
+            echo '</div>';
+            return;
+        }
+
+        $per_page = 20;
+        $page = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
+        $offset = ($page - 1) * $per_page;
+
+        $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$links_table}");
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT l.id, l.wp_user_id, l.telegram_chat_id, l.telegram_user_id, l.tg_username, l.created_at, l.updated_at,
+                        u.user_email, u.display_name
+                 FROM {$links_table} l
+                 LEFT JOIN {$wpdb->users} u ON u.ID = l.wp_user_id
+                 ORDER BY l.created_at DESC
+                 LIMIT %d OFFSET %d",
+                $per_page,
+                $offset
+            ),
+            ARRAY_A
+        );
+
+        echo '<table class="widefat fixed striped">';
+        echo '<thead><tr>';
+        echo '<th>ID</th>';
+        echo '<th>User</th>';
+        echo '<th>Email</th>';
+        echo '<th>Telegram Username</th>';
+        echo '<th>Chat ID</th>';
+        echo '<th>Telegram User ID</th>';
+        echo '<th>Linked At</th>';
+        echo '<th>Updated At</th>';
+        echo '</tr></thead><tbody>';
+
+        if (empty($rows)) {
+            echo '<tr><td colspan="8">No Telegram links found.</td></tr>';
+        } else {
+            foreach ($rows as $row) {
+                $user_label = $row['display_name'] ? $row['display_name'] : ('User #' . $row['wp_user_id']);
+                $profile_url = admin_url('user-edit.php?user_id=' . (int) $row['wp_user_id']);
+                echo '<tr>';
+                echo '<td>' . esc_html($row['id']) . '</td>';
+                echo '<td><a href="' . esc_url($profile_url) . '">' . esc_html($user_label) . '</a></td>';
+                echo '<td>' . esc_html($row['user_email'] ?: '-') . '</td>';
+                echo '<td>' . esc_html($row['tg_username'] ?: '-') . '</td>';
+                echo '<td>' . esc_html($row['telegram_chat_id']) . '</td>';
+                echo '<td>' . esc_html($row['telegram_user_id']) . '</td>';
+                echo '<td>' . esc_html($row['created_at']) . '</td>';
+                echo '<td>' . esc_html($row['updated_at']) . '</td>';
+                echo '</tr>';
+            }
+        }
+
+        echo '</tbody></table>';
+
+        $total_pages = $per_page > 0 ? (int) ceil($total / $per_page) : 1;
+        if ($total_pages > 1) {
+            $page_links = paginate_links([
+                'base' => add_query_arg('paged', '%#%'),
+                'format' => '',
+                'prev_text' => '«',
+                'next_text' => '»',
+                'total' => $total_pages,
+                'current' => $page,
+            ]);
+            if ($page_links) {
+                echo '<div class="tablenav"><div class="tablenav-pages">' . $page_links . '</div></div>';
+            }
+        }
 
         echo '</div>';
     }
