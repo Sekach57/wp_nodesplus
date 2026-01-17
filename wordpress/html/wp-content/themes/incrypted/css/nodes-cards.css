@@ -24,6 +24,26 @@
     transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
 
+.nodes-renewal .node-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 4px;
+    border-radius: 999px;
+    background: transparent;
+}
+
+.nodes-renewal .node-card.is-selected::before {
+    background: #2563eb;
+}
+
+.nodes-renewal .node-card.is-selected {
+    border-color: rgba(37, 99, 235, 0.35);
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.12);
+}
+
 .nodes-renewal .node-card:hover {
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
     transform: translateY(-1px);
@@ -46,6 +66,7 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    position: relative;
 }
 
 .nodes-renewal .node-card__project {
@@ -69,6 +90,13 @@
     pointer-events: auto;
     position: relative;
     z-index: 2;
+}
+
+.nodes-renewal .node-card__help-text {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-left: 6px;
+    white-space: nowrap;
 }
 
 .nodes-renewal .node-card__help:focus-visible {
@@ -106,6 +134,7 @@
     grid-template-columns: 1fr auto;
     gap: 16px;
     align-items: start;
+    justify-items: start;
 }
 
 .nodes-renewal .node-card__label {
@@ -131,17 +160,21 @@
 .nodes-renewal .node-card__meta {
     display: grid;
     gap: 10px;
-    width: fit-content;
+    width: 100%;
     max-width: 320px;
     justify-items: start;
+    justify-self: start;
+    align-self: start;
     text-align: left;
 }
 
-.nodes-renewal .node-meta__row {
+.nodes-renewal .node-meta__row,
+.nodes-renewal .node-card__meta-row {
     display: grid;
-    grid-template-columns: 1fr auto;
-    column-gap: 16px;
-    align-items: center;
+    grid-template-columns: auto 1fr;
+    column-gap: 12px;
+    align-items: baseline;
+    width: 100%;
 }
 
 .nodes-renewal .node-card__due-block {
@@ -154,12 +187,12 @@
 
 .nodes-renewal .node-card__meta-row {
     display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 12px;
+    align-items: baseline;
     font-size: 14px;
     color: #0f172a;
-    justify-items: start;
-    text-align: left;
     width: 100%;
-    justify-content: start;
 }
 
 .nodes-renewal .node-card svg {
@@ -172,13 +205,14 @@
 .nodes-renewal .node-card__meta-label {
     color: #64748b;
     font-size: 12px;
+    white-space: nowrap;
 }
 
 .nodes-renewal .node-card__meta-value {
     font-weight: 600;
-    justify-self: end;
-    text-align: right;
+    text-align: left;
     font-size: 14px;
+    white-space: nowrap;
 }
 
 .nodes-renewal .node-card__meta-row > svg,
@@ -649,3 +683,139 @@ body.np-modal-open {
     height: 20px;
 }
 
+/* Pills for tier and categories */
+.np-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0;
+}
+
+.np-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+/* Tier pills - more prominent styling */
+.np-pill--tier {
+    background: linear-gradient(135deg, #1E2C68, #364EB8);
+    color: #ffffff;
+}
+
+.np-pill--tier-top {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #ffffff;
+}
+
+.np-pill--tier-1 {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: #ffffff;
+}
+
+.np-pill--tier-2 {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #ffffff;
+}
+
+.np-pill--tier-3 {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: #ffffff;
+}
+
+/* Category pills - subtle styling */
+.np-pill--category {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.np-pill--depin {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
+
+.np-pill--rpc {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+}
+
+.np-pill--validator {
+    background: #fef3c7;
+    color: #b45309;
+    border-color: #fcd34d;
+}
+
+.np-pill--ai {
+    background: #fae8ff;
+    color: #a21caf;
+    border-color: #f0abfc;
+}
+
+.np-pill--gaming {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+.np-pill--defi {
+    background: #dbeafe;
+    color: #1e40af;
+    border-color: #93c5fd;
+}
+
+.np-pill--infrastructure {
+    background: #f3e8ff;
+    color: #7c3aed;
+    border-color: #c4b5fd;
+}
+
+.np-pill--storage {
+    background: #ccfbf1;
+    color: #0f766e;
+    border-color: #5eead4;
+}
+
+/* Pills in modal - slightly larger */
+.np-modal__content .np-pills {
+    margin-bottom: 16px;
+}
+
+.np-modal__content .np-pill {
+    font-size: 12px;
+    padding: 5px 12px;
+}
+
+/* Pills on node cards */
+.node_item .np-pills {
+    margin: 6px 0 0 0;
+}
+
+.node_item .node_item_title .np-pills {
+    margin: 0;
+}
+
+.node_item .np-pill {
+    font-size: 10px;
+    padding: 3px 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .np-pill {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+
+    .np-modal__content .np-pill {
+        font-size: 11px;
+        padding: 4px 10px;
+    }
+}

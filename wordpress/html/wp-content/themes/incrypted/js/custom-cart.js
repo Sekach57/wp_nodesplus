@@ -235,17 +235,55 @@ function showNotification(message, type = 'info') {
 
 ////////////////////////////////
 jQuery(document).ready(function($) {
+    function syncRenewalCardState($checkbox) {
+        const $card = $checkbox.closest('.node-card');
+        if (!$card.length) {
+            return;
+        }
+        $card.toggleClass('is-selected', $checkbox.prop('checked'));
+    }
+
+    $('.nodes-renewal .node-card__checkbox').each(function() {
+        syncRenewalCardState($(this));
+    });
+
+    $(document).on('change', '.nodes-renewal .node-card__checkbox', function() {
+        syncRenewalCardState($(this));
+    });
+
+    $(document).on('click', '.nodes-renewal .node-card', function(e) {
+        if ($(e.target).closest('.node-card__checkbox, .node-card__help, .node-card__help-text, a, button, input, label').length) {
+            return;
+        }
+        const $checkbox = $(this).find('.node-card__checkbox');
+        if ($checkbox.length) {
+            $checkbox.prop('checked', !$checkbox.prop('checked')).trigger('change');
+        }
+    });
+
+    $(document).on('click', '.nodes-renewal .node-card__help', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const $button = $(this);
+        const targetId = $button.attr('aria-controls');
+        const $target = targetId ? $('#' + targetId) : $();
+        const isOpen = $button.attr('aria-expanded') === 'true';
+        $button.attr('aria-expanded', (!isOpen).toString());
+        if ($target.length) {
+            $target.prop('hidden', isOpen);
+        }
+    });
 
     // Select all renewals
     $('#select-all-renewals').on('click', function(e) {
         e.preventDefault();
-        $('input[name="renewal_products[]"]').prop('checked', true);
+        $('input[name="renewal_products[]"]').prop('checked', true).trigger('change');
     });
 
     // Deselect all renewals
     $('#deselect-all-renewals').on('click', function(e) {
         e.preventDefault();
-        $('input[name="renewal_products[]"]').prop('checked', false);
+        $('input[name="renewal_products[]"]').prop('checked', false).trigger('change');
     });
 
     // Handle form submission

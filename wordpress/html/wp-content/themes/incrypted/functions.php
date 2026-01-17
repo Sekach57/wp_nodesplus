@@ -36,13 +36,17 @@ add_action( 'after_setup_theme', 'incrypted_content_width', 0 );
  * Enqueue scripts and styles.
  */
 function incrypted_scripts() {
+    $theme_dir = get_template_directory();
+    $app_js_version = file_exists( $theme_dir . '/js/app.js' ) ? filemtime( $theme_dir . '/js/app.js' ) : _S_VERSION;
+    $nodes_css_version = file_exists( $theme_dir . '/css/nodes-cards.css' ) ? filemtime( $theme_dir . '/css/nodes-cards.css' ) : _S_VERSION;
+
     wp_enqueue_style( 'incrypted-basic', get_stylesheet_uri(), array(), _S_VERSION );
     wp_enqueue_style( 'incrypted-normalize', get_template_directory_uri() . '/css/normalize.css', array(), _S_VERSION );
     wp_enqueue_style( 'incrypted-styles', get_template_directory_uri() . '/css/style.css', array(), _S_VERSION );
-    wp_enqueue_style( 'incrypted-nodes-cards-css', get_template_directory_uri() . '/css/nodes-cards.css', array(), _S_VERSION );
+    wp_enqueue_style( 'incrypted-nodes-cards-css', get_template_directory_uri() . '/css/nodes-cards.css', array(), $nodes_css_version );
 
     wp_enqueue_script('jquery');
-	wp_enqueue_script( 'incrypted-scripts', get_template_directory_uri() . '/js/app.js', array(), _S_VERSION, true );
+	wp_enqueue_script( 'incrypted-scripts', get_template_directory_uri() . '/js/app.js', array(), $app_js_version, true );
     wp_enqueue_script('custom-cart', get_stylesheet_directory_uri() . '/js/custom-cart.js', ['jquery'], _S_VERSION, true);
 
     wp_localize_script('custom-cart', 'custom_cart_ajax', [
@@ -64,9 +68,8 @@ add_action( 'wp_enqueue_scripts', 'incrypted_scripts' );
 add_filter( 'woocommerce_feature_flag_blockified_cart_checkout', '__return_false' );
 
 require get_template_directory() . '/acf-blocks.php';
-require get_template_directory() . '/incr-node-details.php';
-require get_template_directory() . '/WOO-customization/nodes-functionality.php';
-require get_template_directory() . '/WOO-customization/woo-helpers.php';
+require get_template_directory() . '/woo-custom/nodes-functionality.php';
+require get_template_directory() . '/woo-custom/woo-helpers.php';
 
 add_filter('pll_get_post_types', 'add_cpt_to_pll', 10, 2);
 function add_cpt_to_pll($post_types, $is_settings) {

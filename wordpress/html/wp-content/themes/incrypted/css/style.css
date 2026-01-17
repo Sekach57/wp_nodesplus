@@ -442,8 +442,10 @@ h2 {
     max-width: 524px; }
   .nodes .node_item_title {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
     color: #ffffff;
     font-family: "Onest", sans-serif;
     font-size: 24px;
@@ -455,6 +457,8 @@ h2 {
       max-width: 40px;
       width: 100%;
       border-radius: 11px; }
+  .nodes .node_item_title .np-pills {
+    margin: 0; }
   .nodes .node_item_description {
     padding-left: 56px;
     font-size: 14px;
