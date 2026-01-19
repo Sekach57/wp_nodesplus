@@ -39,10 +39,11 @@ function incrypted_scripts() {
     $theme_dir = get_template_directory();
     $app_js_version = file_exists( $theme_dir . '/js/app.js' ) ? filemtime( $theme_dir . '/js/app.js' ) : _S_VERSION;
     $nodes_css_version = file_exists( $theme_dir . '/css/nodes-cards.css' ) ? filemtime( $theme_dir . '/css/nodes-cards.css' ) : _S_VERSION;
+    $theme_css_version = file_exists( $theme_dir . '/css/style.css' ) ? filemtime( $theme_dir . '/css/style.css' ) : _S_VERSION;
 
     wp_enqueue_style( 'incrypted-basic', get_stylesheet_uri(), array(), _S_VERSION );
     wp_enqueue_style( 'incrypted-normalize', get_template_directory_uri() . '/css/normalize.css', array(), _S_VERSION );
-    wp_enqueue_style( 'incrypted-styles', get_template_directory_uri() . '/css/style.css', array(), _S_VERSION );
+    wp_enqueue_style( 'incrypted-styles', get_template_directory_uri() . '/css/style.css', array(), $theme_css_version );
     wp_enqueue_style( 'incrypted-nodes-cards-css', get_template_directory_uri() . '/css/nodes-cards.css', array(), $nodes_css_version );
 
     wp_enqueue_script('jquery');
