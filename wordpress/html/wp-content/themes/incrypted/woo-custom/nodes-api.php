@@ -88,6 +88,26 @@ function getNodesByUserID($user_id, $trigger_call = false){
     return $user_nodes;
 }
 
+function incr_user_has_active_nodes($user_id) {
+    $nodes = getNodesByUserID($user_id);
+    if (!is_array($nodes) || empty($nodes) || isset($nodes['detail'])) {
+        return false;
+    }
+
+    $now = current_time('timestamp');
+    foreach ($nodes as $node) {
+        if (empty($node['due_date'])) {
+            continue;
+        }
+        $timestamp = strtotime($node['due_date']);
+        if ($timestamp && $timestamp >= $now) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 add_action('rest_api_init', function () {
     register_rest_route('custom/v1', '/user/(?P<user_id>\d+)', [
         'methods'  => 'GET',

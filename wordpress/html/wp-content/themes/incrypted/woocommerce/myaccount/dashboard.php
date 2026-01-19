@@ -33,6 +33,11 @@ $discord_connected = ! empty( $discord_id );
 $discord_status = $discord_connected ? __( 'Connected', 'incrypted' ) : __( 'Not connected', 'incrypted' );
 $discord_action = $discord_connected ? __( 'Disconnect', 'incrypted' ) : __( 'Connect', 'incrypted' );
 $discord_status_class = $discord_connected ? 'is-connected' : 'is-disconnected';
+$discord_has_access = true;
+if ( function_exists( 'incr_user_has_active_nodes' ) ) {
+    $discord_has_access = incr_user_has_active_nodes( $user_id );
+}
+$discord_blocked = ! $discord_connected && ! $discord_has_access;
 
 // Telegram
 $telegram_connected = false;
@@ -139,7 +144,7 @@ if ( is_array( $user_nodes ) && ! isset( $user_nodes['detail'] ) ) {
         <div class="dashboard-card__status <?php echo esc_attr( $discord_status_class ); ?>">
             <?php echo esc_html( $discord_status ); ?>
         </div>
-        <div class="dashboard-card__action">
+        <div class="dashboard-card__action<?php echo $discord_blocked ? ' dashboard-card__action--blocked' : ''; ?>">
             <?php if ( $discord_connected ) : ?>
                 <form method="post" class="discord-disconnect-form">
                     <?php wp_nonce_field('discord_disconnect', 'discord_nonce'); ?>
@@ -147,10 +152,17 @@ if ( is_array( $user_nodes ) && ! isset( $user_nodes['detail'] ) ) {
                         <?php echo esc_html( $discord_action ); ?>
                     </button>
                 </form>
-            <?php else : ?>
+            <?php elseif ( $discord_has_access ) : ?>
                 <a href="<?php echo esc_url( $discord_oauth_url ); ?>" class="dashboard-card__button">
                     <?php echo esc_html( $discord_action ); ?>
                 </a>
+            <?php else : ?>
+                <button type="button" class="dashboard-card__button dashboard-card__button--blocked js-discord-access" data-discord-message="<?php esc_attr_e( 'Access to NodesPlus discord is only for node holders.', 'incrypted' ); ?>" aria-disabled="true">
+                    <?php echo esc_html( $discord_action ); ?>
+                </button>
+                <span class="dashboard-card__tooltip" role="tooltip">
+                    <?php esc_html_e( 'Access to NodesPlus discord is only for node holders.', 'incrypted' ); ?>
+                </span>
             <?php endif; ?>
         </div>
     </div>
@@ -201,6 +213,17 @@ if ( is_array( $user_nodes ) && ! isset( $user_nodes['detail'] ) ) {
                 <?php echo esc_html( $twitter_action ); ?>
             </button>
         </div>
+    </div>
+</div>
+
+<div class="np-discord-access-modal" id="np-discord-access-modal" aria-hidden="true">
+    <div class="np-discord-access-modal__overlay" data-discord-access-close></div>
+    <div class="np-discord-access-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="np-discord-access-title">
+        <button type="button" class="np-discord-access-modal__close" data-discord-access-close aria-label="<?php esc_attr_e( 'Close', 'incrypted' ); ?>">
+            &times;
+        </button>
+        <h3 id="np-discord-access-title"><?php esc_html_e( 'Discord access restricted', 'incrypted' ); ?></h3>
+        <p id="np-discord-access-message"><?php esc_html_e( 'Access to NodesPlus discord is only for node holders.', 'incrypted' ); ?></p>
     </div>
 </div>
 

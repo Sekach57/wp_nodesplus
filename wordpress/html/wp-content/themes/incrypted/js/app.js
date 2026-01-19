@@ -300,6 +300,54 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
+document.addEventListener('DOMContentLoaded', function () {
+  const accessModal = document.getElementById('np-discord-access-modal');
+  if (!accessModal) {
+    return;
+  }
+
+  const messageEl = accessModal.querySelector('#np-discord-access-message');
+  const openButtons = document.querySelectorAll('.js-discord-access');
+  const closeButtons = accessModal.querySelectorAll('[data-discord-access-close]');
+
+  function openAccessModal(message) {
+    if (messageEl && message) {
+      messageEl.textContent = message;
+    }
+    accessModal.classList.add('is-open');
+    accessModal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('np-discord-access-open');
+  }
+
+  function closeAccessModal() {
+    accessModal.classList.remove('is-open');
+    accessModal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('np-discord-access-open');
+  }
+
+  openButtons.forEach(button => {
+    button.addEventListener('click', function (event) {
+      event.preventDefault();
+      openAccessModal(button.getAttribute('data-discord-message'));
+    });
+  });
+
+  closeButtons.forEach(button => {
+    button.addEventListener('click', closeAccessModal);
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && accessModal.classList.contains('is-open')) {
+      closeAccessModal();
+    }
+  });
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('discord_error') === 'no_active_nodes') {
+    openAccessModal(messageEl ? messageEl.textContent : '');
+  }
+});
+
 
 document.addEventListener('DOMContentLoaded', function () {
   const menuLinks = document.querySelectorAll('.menu a[href^="#"]');

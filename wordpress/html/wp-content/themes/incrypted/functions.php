@@ -223,6 +223,11 @@ add_action('template_redirect', function () {
         wp_redirect(add_query_arg('discord_error', 'not_logged_in', $redirect));
         exit;
     }
+    $user = wp_get_current_user();
+    if (function_exists('incr_user_has_active_nodes') && !incr_user_has_active_nodes($user->ID)) {
+        wp_redirect(add_query_arg('discord_error', 'no_active_nodes', $redirect));
+        exit;
+    }
     if (!isset($_GET['state']) || !wp_verify_nonce($_GET['state'], 'discord_oauth')) {
         wp_redirect(add_query_arg('discord_error', 'invalid_state', $redirect));
         exit;
@@ -264,7 +269,6 @@ add_action('template_redirect', function () {
         wp_redirect(add_query_arg('discord_error', 'no_discord_id', $redirect));
         exit;
     }
-    $user = wp_get_current_user();
     update_field('discord_id', $discord_user['id'], 'user_' . $user->ID);
     send_user_update('Discord updated', [
         'user_id' => $user->ID,

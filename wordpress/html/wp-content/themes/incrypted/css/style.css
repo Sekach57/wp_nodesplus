@@ -1787,4 +1787,80 @@ body > .woocommerce {
     flex-direction: column;
     gap: 12px; } }
 
+.dashboard-card__action--blocked {
+  position: relative; }
+
+.dashboard-card__button--blocked {
+  opacity: 0.6;
+  cursor: not-allowed; }
+
+.dashboard-card__tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  border-radius: 8px;
+  min-width: 220px;
+  max-width: 260px;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 20; }
+
+.dashboard-card__action--blocked:hover .dashboard-card__tooltip,
+.dashboard-card__action--blocked:focus-within .dashboard-card__tooltip {
+  opacity: 1;
+  visibility: visible; }
+
+.np-discord-access-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; }
+
+.np-discord-access-modal.is-open {
+  display: flex; }
+
+.np-discord-access-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65); }
+
+.np-discord-access-modal__dialog {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 28px;
+  width: min(420px, 90vw);
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.35);
+  z-index: 1;
+  text-align: center; }
+
+.np-discord-access-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #111827;
+  font-size: 22px;
+  cursor: pointer; }
+
+.np-discord-access-modal__close:hover {
+  background: #e5e7eb; }
+
+body.np-discord-access-open {
+  overflow: hidden; }
+
 /*# sourceMappingURL=style.css.map */
