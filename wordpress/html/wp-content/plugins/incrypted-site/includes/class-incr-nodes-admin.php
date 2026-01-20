@@ -95,12 +95,13 @@ class INCR_Nodes_Admin {
             exit;
         }
 
-        $scheduled = wp_next_scheduled('incr_sync_all_nodes_job');
-        if (!$scheduled) {
-            wp_schedule_single_event(time() + 5, 'incr_sync_all_nodes_job');
+        $result = self::run_sync_all_nodes();
+        $notice = 'sync_all_complete_0_0_0';
+        if (is_array($result)) {
+            $notice = 'sync_all_complete_' . (int) $result['users_synced'] . '_' . (int) $result['api_rows'] . '_' . (int) $result['db_rows'];
         }
 
-        $redirect = add_query_arg('incr_notice', 'sync_all_scheduled', admin_url('admin.php?page=incr-nodes-dashboard'));
+        $redirect = add_query_arg('incr_notice', $notice, admin_url('admin.php?page=incr-nodes-dashboard'));
         if (!headers_sent()) {
             wp_safe_redirect($redirect);
             exit;
@@ -111,7 +112,7 @@ class INCR_Nodes_Admin {
 
     public static function run_sync_all_nodes() {
         if (!function_exists('getNodesByUserID')) {
-            return;
+            return null;
         }
 
         @set_time_limit(0);
@@ -138,6 +139,12 @@ class INCR_Nodes_Admin {
             ],
             HOUR_IN_SECONDS
         );
+
+        return [
+            'users_synced' => $users_synced,
+            'api_rows' => $api_rows,
+            'db_rows' => $db_rows,
+        ];
     }
 
     public static function handle_save_nodes_columns() {
@@ -235,14 +242,14 @@ class INCR_Nodes_Admin {
             $count = isset($parts[1]) ? (int) $parts[1] : 0;
             $db_count = isset($parts[2]) ? (int) $parts[2] : 0;
             echo '<div class="notice notice-success is-dismissible"><p>User nodes refreshed. API rows: ' . esc_html($count) . '. DB rows: ' . esc_html($db_count) . '.</p></div>';
+        } elseif ($notice === 'sync_all_scheduled') {
+            echo '<div class="notice notice-info is-dismissible"><p>Sync all started. Refresh this page in a minute to see results.</p></div>';
         } elseif (strpos($notice, 'sync_all_') === 0) {
             $parts = explode('_', $notice);
             $users_synced = isset($parts[2]) ? (int) $parts[2] : 0;
             $api_rows = isset($parts[3]) ? (int) $parts[3] : 0;
             $db_rows = isset($parts[4]) ? (int) $parts[4] : 0;
             echo '<div class="notice notice-success is-dismissible"><p>Sync all complete. Users: ' . esc_html($users_synced) . '. API rows: ' . esc_html($api_rows) . '. DB rows: ' . esc_html($db_rows) . '.</p></div>';
-        } elseif ($notice === 'sync_all_scheduled') {
-            echo '<div class="notice notice-info is-dismissible"><p>Sync all started. Refresh this page in a minute to see results.</p></div>';
         } elseif ($notice === 'sync_all_missing_fetch') {
             echo '<div class="notice notice-error is-dismissible"><p>Sync all failed: fetch function not available.</p></div>';
         } elseif ($notice === 'missing_user') {
