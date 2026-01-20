@@ -61,6 +61,9 @@ class INCR_Nodes_Admin {
             $count = is_array($nodes) ? count($nodes) : 0;
             $db_count = 0;
             if (class_exists('INCR_Nodes_Store')) {
+                if (is_array($nodes) && !isset($nodes['detail'])) {
+                    INCR_Nodes_Store::upsert_nodes($user_id, $nodes, 'api');
+                }
                 $db_result = INCR_Nodes_Store::get_all_nodes([
                     'user_id' => $user_id,
                     'page' => 1,
@@ -125,6 +128,9 @@ class INCR_Nodes_Admin {
             $nodes = getNodesByUserID((int) $user_id, true);
             $api_rows += is_array($nodes) ? count($nodes) : 0;
             if (class_exists('INCR_Nodes_Store')) {
+                if (is_array($nodes) && !isset($nodes['detail'])) {
+                    INCR_Nodes_Store::upsert_nodes((int) $user_id, $nodes, 'api');
+                }
                 $db_rows += count(INCR_Nodes_Store::get_nodes_by_user((int) $user_id));
             }
             $users_synced++;
