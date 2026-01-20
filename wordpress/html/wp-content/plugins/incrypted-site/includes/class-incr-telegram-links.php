@@ -210,6 +210,8 @@ class INCR_Telegram_Links {
         if ( $chat_id === 0 ) {
             return new WP_Error( 'nodesplus_telegram_invalid', 'Missing chat_id.', [ 'status' => 400 ] );
         }
+        $status = sanitize_text_field( (string) $request->get_param( 'status' ) );
+        $status = in_array( $status, [ 'active', 'overdue' ], true ) ? $status : '';
 
         self::ensure_table( self::links_table_name(), [ __CLASS__, 'create_table' ] );
 
@@ -237,17 +239,28 @@ class INCR_Telegram_Links {
         }
 
         $nodes_table = INCR_Nodes_Store::table_name();
+        $where = "user_id = %d
+                  AND (
+                       JSON_UNQUOTE(JSON_EXTRACT(raw_payload, '$.lifecycle_status')) = 'current'
+                       OR JSON_EXTRACT(raw_payload, '$.lifecycle_status') IS NULL
+                  )";
+        $params = [ $wp_user_id ];
+
+        if ( $status === 'active' ) {
+            $where .= " AND due_date IS NOT NULL AND due_date >= %s";
+            $params[] = current_time( 'mysql' );
+        } elseif ( $status === 'overdue' ) {
+            $where .= " AND due_date IS NOT NULL AND due_date < %s";
+            $params[] = current_time( 'mysql' );
+        }
+
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT node_id, node_type, due_date, raw_payload
                  FROM {$nodes_table}
-                 WHERE user_id = %d
-                   AND (
-                        JSON_UNQUOTE(JSON_EXTRACT(raw_payload, '$.lifecycle_status')) = 'current'
-                        OR JSON_EXTRACT(raw_payload, '$.lifecycle_status') IS NULL
-                   )
+                 WHERE {$where}
                  ORDER BY due_date IS NULL, due_date ASC",
-                $wp_user_id
+                $params
             ),
             ARRAY_A
         );

@@ -107,11 +107,13 @@ def link_with_wp(token, chat_id, user_id, username, first_name):
         return False, str(exc)
 
 
-def fetch_nodes_for_chat(chat_id):
+def fetch_nodes_for_chat(chat_id, status=None):
     if not WP_BASE_URL or not BOT_SECRET:
         return False, "Missing WP_BASE_URL or BOT_SECRET"
 
     url = WP_BASE_URL.rstrip("/") + "/wp-json/nodesplus/v1/telegram/nodes?chat_id={0}".format(chat_id)
+    if status:
+        url += "&status={0}".format(status)
     req = Request(
         url,
         headers={
@@ -181,7 +183,7 @@ def handle_update(update):
     if text.startswith("/nodes"):
         if chat_id is None:
             return
-        ok, body = fetch_nodes_for_chat(chat_id)
+        ok, body = fetch_nodes_for_chat(chat_id, "active")
         if not ok:
             print("WP nodes failed:", body, file=sys.stderr)
             send_message(BOT_TOKEN, chat_id, "❌ Unable to load nodes. Please try again.")
@@ -194,19 +196,32 @@ def handle_update(update):
 
         nodes = data.get("nodes", [])
         if not nodes:
-            if not send_message(BOT_TOKEN, chat_id, "No active nodes found."):
-                print("Telegram send failed for /nodes empty response", file=sys.stderr)
-            return
+            ok, body = fetch_nodes_for_chat(chat_id, "overdue")
+            if not ok:
+                print("WP nodes failed:", body, file=sys.stderr)
+                send_message(BOT_TOKEN, chat_id, "❌ Unable to load nodes. Please try again.")
+                return
+            try:
+                data = json.loads(body.lstrip("\ufeff"))
+            except json.JSONDecodeError:
+                send_message(BOT_TOKEN, chat_id, "❌ Unexpected response from server.")
+                return
+            nodes = data.get("nodes", [])
+            if not nodes:
+                if not send_message(BOT_TOKEN, chat_id, "No active or overdue nodes found."):
+                    print("Telegram send failed for /nodes empty response", file=sys.stderr)
+                return
+            header = "⚠️ Overdue nodes"
+        else:
+            header = "⏰ Active nodes"
 
-        lines = ["⏰ Node renewal reminder"]
+        lines = [header]
         for node in nodes:
             node_type = node.get("node_type") or node.get("node_id") or "Node"
             due_date = node.get("due_date") or "unknown"
             status = node.get("derived_status") or "unknown"
             if status == "overdue":
                 lines.append("- {0} — OVERDUE since {1}".format(node_type, due_date[:10]))
-            elif status == "active":
-                lines.append("- {0} — due {1}".format(node_type, due_date[:10]))
             else:
                 lines.append("- {0} — due {1}".format(node_type, due_date[:10]))
 
