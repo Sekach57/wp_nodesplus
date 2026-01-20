@@ -430,7 +430,9 @@ class INCR_Nodes_Admin {
         echo '</tbody></table>';
 
         if ($total_pages > 1) {
-            $base = add_query_arg('paged', '%#%');
+            $pagination_args = $base_table_filters;
+            $pagination_args['paged'] = '%#%';
+            $base = add_query_arg($pagination_args, admin_url('admin.php'));
             echo '<div class="tablenav"><div class="tablenav-pages">';
             echo paginate_links([
                 'base' => esc_url($base),
@@ -529,8 +531,15 @@ class INCR_Nodes_Admin {
 
         $total_pages = $per_page > 0 ? (int) ceil($total / $per_page) : 1;
         if ($total_pages > 1) {
+            $base = add_query_arg(
+                [
+                    'page' => 'incr-telegram-links',
+                    'paged' => '%#%',
+                ],
+                admin_url('admin.php')
+            );
             $page_links = paginate_links([
-                'base' => add_query_arg('paged', '%#%'),
+                'base' => esc_url($base),
                 'format' => '',
                 'prev_text' => '«',
                 'next_text' => '»',
