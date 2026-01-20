@@ -435,7 +435,7 @@ class INCR_Nodes_Admin {
             $base = add_query_arg($pagination_args, admin_url('admin.php'));
             echo '<div class="tablenav"><div class="tablenav-pages">';
             echo paginate_links([
-                'base' => esc_url($base),
+                'base' => $base,
                 'format' => '',
                 'current' => $page,
                 'total' => $total_pages,
@@ -539,7 +539,7 @@ class INCR_Nodes_Admin {
                 admin_url('admin.php')
             );
             $page_links = paginate_links([
-                'base' => esc_url($base),
+                'base' => $base,
                 'format' => '',
                 'prev_text' => '«',
                 'next_text' => '»',
