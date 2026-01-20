@@ -229,6 +229,36 @@ def handle_update(update):
             print("Telegram send failed for /nodes response", file=sys.stderr)
         return
 
+    if text.startswith("/overdue"):
+        if chat_id is None:
+            return
+        ok, body = fetch_nodes_for_chat(chat_id, "overdue")
+        if not ok:
+            print("WP nodes failed:", body, file=sys.stderr)
+            send_message(BOT_TOKEN, chat_id, "❌ Unable to load nodes. Please try again.")
+            return
+        try:
+            data = json.loads(body.lstrip("\ufeff"))
+        except json.JSONDecodeError:
+            send_message(BOT_TOKEN, chat_id, "❌ Unexpected response from server.")
+            return
+
+        nodes = data.get("nodes", [])
+        if not nodes:
+            if not send_message(BOT_TOKEN, chat_id, "No overdue nodes found."):
+                print("Telegram send failed for /overdue empty response", file=sys.stderr)
+            return
+
+        lines = ["⚠️ Overdue nodes"]
+        for node in nodes:
+            node_type = node.get("node_type") or node.get("node_id") or "Node"
+            due_date = node.get("due_date") or "unknown"
+            lines.append("- {0} — OVERDUE since {1}".format(node_type, due_date[:10]))
+
+        if not send_message(BOT_TOKEN, chat_id, "\n".join(lines)):
+            print("Telegram send failed for /overdue response", file=sys.stderr)
+        return
+
     if not text.startswith("/start"):
         return
 
