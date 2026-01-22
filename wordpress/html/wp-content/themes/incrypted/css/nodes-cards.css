@@ -389,6 +389,10 @@
     justify-content: center;
 }
 
+.np-modal__close svg {
+    display: block;
+}
+
 .np-modal__close:hover,
 .np-modal__close:focus,
 .np-modal__close:focus-visible {
@@ -476,13 +480,13 @@
 .np-modal__actions-panel {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 12px;
     justify-content: space-between;
-    width: min(100%, 320px);
+    width: min(100%, 300px);
     background: rgba(18, 18, 28, 0.72);
     border: 1px solid rgba(180, 120, 255, 0.2);
     border-radius: 18px;
-    padding: 22px;
+    padding: 18px;
     box-shadow: 0 18px 50px rgba(96, 40, 160, 0.35);
 }
 
@@ -501,14 +505,14 @@
 }
 
 .np-modal__price-amount {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
 }
 
 .np-modal__price-period {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
-    opacity: 0.85;
+    opacity: 0.7;
 }
 
 .np-modal__action {
@@ -516,8 +520,8 @@
     background: linear-gradient(135deg, #7b4dff, #b87cff);
     color: var(--np-white);
     border-radius: 999px;
-    padding: 16px 24px;
-    font-size: 16px;
+    padding: 14px 20px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
@@ -525,7 +529,7 @@
     align-items: center;
     justify-content: center;
     align-self: stretch;
-    margin-top: auto;
+    margin-top: 0;
 }
 
 .np-modal__action:hover,
@@ -542,8 +546,8 @@
     background: rgba(180, 120, 255, 0.08);
     color: var(--np-white);
     border-radius: 999px;
-    padding: 10px 18px;
-    font-size: 14px;
+    padding: 8px 16px;
+    font-size: 13px;
     font-weight: 600;
     text-decoration: none;
     display: inline-flex;
@@ -562,9 +566,9 @@
 .np-modal__social {
     display: flex;
     flex-direction: row;
-    gap: 12px;
+    gap: 10px;
     justify-content: center;
-    padding: 12px 0;
+    padding: 6px 0;
     align-items: center;
 }
 

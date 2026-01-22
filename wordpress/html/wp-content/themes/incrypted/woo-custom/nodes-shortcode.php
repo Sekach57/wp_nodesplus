@@ -136,7 +136,11 @@ function display_custom_nodes($atts) {
                                 <img class="np-modal__logo" src="" alt="" aria-hidden="true" />
                                 <h3 class="np-modal__title" id="np-node-modal-title">Node details</h3>
                             </div>
-                            <button type="button" class="np-modal__close" data-np-modal-close aria-label="<?php esc_attr_e( 'Close', 'incrypted' ); ?>">?</button>
+                            <button type="button" class="np-modal__close" data-np-modal-close aria-label="<?php esc_attr_e( 'Close', 'incrypted' ); ?>">
+                                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                                    <path d="M6 6l12 12M18 6l-12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </button>
                         </div>
                         <div class="np-modal__body">
                             <div class="np-modal__column np-modal__column--details">
