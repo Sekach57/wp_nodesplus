@@ -166,7 +166,10 @@ function display_custom_nodes($atts) {
                                         </div>
                                         <a class="np-modal__action" href="#" data-np-modal-add-to-cart><?php esc_html_e( 'Add to cart', 'incrypted' ); ?></a>
                                         <div class="np-modal__guide" data-np-modal-guide-wrap>
-                                            <a class="np-modal__secondary" href="#" target="_blank" rel="noopener" data-np-modal-guide><?php esc_html_e( 'Installation guide', 'incrypted' ); ?></a>
+                                            <a class="np-modal__install-link" href="#" target="_blank" rel="noopener" data-np-modal-guide>
+                                                <span class="np-modal__install-icon" aria-hidden="true">?</span>
+                                                <span class="np-modal__install-text"><?php esc_html_e( 'Installation guide', 'incrypted' ); ?></span>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
