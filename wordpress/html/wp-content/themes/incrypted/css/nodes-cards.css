@@ -378,8 +378,8 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    border: 0;
-    background: transparent;
+    border: 1px solid rgba(180, 120, 255, 0.25);
+    background: rgba(18, 18, 28, 0.4);
     font-size: 22px;
     line-height: 0;
     cursor: pointer;
@@ -402,6 +402,7 @@
 .np-modal__close:focus-visible {
     background: rgba(255, 255, 255, 0.12);
     color: var(--np-white);
+    box-shadow: 0 0 0 3px rgba(180, 120, 255, 0.2);
 }
 
 .np-modal__body {
@@ -425,9 +426,9 @@
     justify-content: center;
 }
 
-.np-modal__actions-wrap {
-    width: 100%;
+.np-modal__right {
     display: flex;
+    align-items: center;
     justify-content: center;
 }
 
@@ -487,18 +488,23 @@
 
 }
 
-.np-modal__actions-panel {
+.np-modal__action-card {
+    width: 100%;
+    max-width: 340px;
+    padding: 20px;
+    border-radius: 20px;
+    background: rgba(16, 16, 24, 0.55);
+    border: 1px solid rgba(180, 120, 255, 0.22);
+    box-shadow: 0 18px 50px rgba(96, 40, 160, 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.np-modal__action-stack {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    justify-content: space-between;
-    width: min(100%, 260px);
-    background: rgba(18, 18, 28, 0.72);
-    border: 1px solid rgba(180, 120, 255, 0.2);
-    border-radius: 18px;
-    padding: 14px;
-    box-shadow: 0 18px 50px rgba(96, 40, 160, 0.35);
     align-items: center;
+    gap: 12px;
     text-align: center;
 }
 
@@ -507,22 +513,18 @@
     align-items: baseline;
     justify-content: center;
     gap: 8px;
-    align-self: center;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(138, 92, 255, 0.25);
-    border: 1px solid rgba(180, 120, 255, 0.35);
+    width: 100%;
     color: var(--np-white);
-    letter-spacing: 0.2px;
 }
 
 .np-modal__price-amount {
-    font-size: 19px;
+    font-size: 30px;
     font-weight: 700;
+    letter-spacing: -0.02em;
 }
 
 .np-modal__price-period {
-    font-size: 10px;
+    font-size: 13px;
     font-weight: 600;
     opacity: 0.7;
 }
@@ -532,8 +534,8 @@
     background: linear-gradient(135deg, #7b4dff, #b87cff);
     color: var(--np-white);
     border-radius: 999px;
-    padding: 12px 16px;
-    font-size: 13px;
+    padding: 14px 20px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
@@ -542,6 +544,9 @@
     justify-content: center;
     align-self: stretch;
     margin-top: 0;
+    width: 100%;
+    min-height: 46px;
+    box-shadow: 0 10px 24px rgba(120, 60, 200, 0.35);
 }
 
 .np-modal__action:hover,
@@ -554,18 +559,18 @@
 }
 
 .np-modal__secondary {
-    border: 1px solid rgba(180, 120, 255, 0.35);
-    background: rgba(180, 120, 255, 0.08);
-    color: var(--np-white);
-    border-radius: 999px;
-    padding: 8px 12px;
-    font-size: 11px;
-    font-weight: 600;
+    border: 0;
+    background: transparent;
+    color: var(--np-muted);
+    border-radius: 0;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 500;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    align-self: stretch;
+    align-self: center;
 }
 
 .np-modal__guide {
@@ -581,16 +586,17 @@
 .np-modal__secondary:hover,
 .np-modal__secondary:focus,
 .np-modal__secondary:focus-visible {
-    background: rgba(180, 120, 255, 0.18);
+    background: transparent;
     color: var(--np-white);
+    text-decoration: underline;
 }
 
 .np-modal__social {
     display: flex;
     flex-direction: row;
-    gap: 8px;
+    gap: 12px;
     justify-content: center;
-    padding: 4px 0;
+    padding: 0;
     align-items: center;
 }
 
@@ -599,11 +605,11 @@
 }
 
 .np-modal__social-button {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: 1px solid rgba(180, 120, 255, 0.3);
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--np-primary);
     display: inline-flex;
     align-items: center;
@@ -667,9 +673,10 @@ body.np-modal-open {
         padding: 0;
     }
 
-    .np-modal__actions-panel {
-        gap: 14px;
+    .np-modal__action-card {
         width: 100%;
+        max-width: 100%;
+        padding: 18px;
     }
 }
 
@@ -732,16 +739,16 @@ body.np-modal-open {
     }
 
     .np-modal__price-amount {
-        font-size: 22px;
+        font-size: 24px;
     }
 
     .np-modal__action {
-        padding: 14px 24px;
-        font-size: 15px;
+        padding: 12px 20px;
+        font-size: 14px;
     }
 
     .np-modal__secondary {
-        font-size: 14px;
+        font-size: 13px;
     }
 }
 

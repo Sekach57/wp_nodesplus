@@ -148,10 +148,10 @@ function display_custom_nodes($atts) {
                                     <div class="np-modal__content"></div>
                                 </div>
                             </div>
-                            <div class="np-modal__column np-modal__column--actions">
-                                <div class="np-modal__actions-wrap">
-                                    <div class="np-modal__card np-modal__actions-panel">
-                                        <?php // Layout resilience: socials/guide may be missing; wrappers collapse cleanly. ?>
+                            <div class="np-modal__column np-modal__column--actions np-modal__right">
+                                <div class="np-modal__action-card np-modal__actions-panel">
+                                    <div class="np-modal__action-stack">
+                                        <?php // Layout resilience: socials/guide may be missing; all four cases stay aligned. ?>
                                         <div class="np-modal__price"></div>
                                         <div class="np-modal__social np-modal__socials" data-np-modal-socials>
                                             <a class="np-modal__social-button" href="#" target="_blank" rel="noopener" data-np-modal-discord aria-label="<?php esc_attr_e( 'Discord', 'incrypted' ); ?>">
@@ -164,10 +164,10 @@ function display_custom_nodes($atts) {
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18.9 2H22l-7.3 8.3L23.6 22h-7l-5.5-7.2L4.7 22H1.5l7.8-8.9L.7 2h7.2l4.9 6.4L18.9 2Zm-2 18h2.1L7.1 4h-2L16.9 20Z" fill="#0f172a"></path></svg>
                                             </a>
                                         </div>
+                                        <a class="np-modal__action" href="#" data-np-modal-add-to-cart><?php esc_html_e( 'Add to cart', 'incrypted' ); ?></a>
                                         <div class="np-modal__guide" data-np-modal-guide-wrap>
                                             <a class="np-modal__secondary" href="#" target="_blank" rel="noopener" data-np-modal-guide><?php esc_html_e( 'Installation guide', 'incrypted' ); ?></a>
                                         </div>
-                                        <a class="np-modal__action" href="#" data-np-modal-add-to-cart><?php esc_html_e( 'Add to cart', 'incrypted' ); ?></a>
                                     </div>
                                 </div>
                             </div>
