@@ -383,7 +383,7 @@
     font-size: 22px;
     line-height: 0;
     cursor: pointer;
-    color: #cbd5e1;
+    color: #f4f2ff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -394,6 +394,7 @@
     width: 18px;
     height: 18px;
     stroke: currentColor;
+    fill: none;
 }
 
 .np-modal__close:hover,
@@ -406,7 +407,7 @@
 .np-modal__body {
     padding: 26px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-columns: minmax(0, 1fr) 300px;
     gap: 28px;
     align-items: start;
     flex: 1 1 auto;
@@ -485,11 +486,11 @@
     flex-direction: column;
     gap: 10px;
     justify-content: space-between;
-    width: min(100%, 280px);
+    width: min(100%, 260px);
     background: rgba(18, 18, 28, 0.72);
     border: 1px solid rgba(180, 120, 255, 0.2);
     border-radius: 18px;
-    padding: 16px;
+    padding: 14px;
     box-shadow: 0 18px 50px rgba(96, 40, 160, 0.35);
     align-items: center;
     text-align: center;
@@ -501,7 +502,7 @@
     justify-content: center;
     gap: 8px;
     align-self: center;
-    padding: 6px 12px;
+    padding: 6px 10px;
     border-radius: 999px;
     background: rgba(138, 92, 255, 0.25);
     border: 1px solid rgba(180, 120, 255, 0.35);
@@ -510,12 +511,12 @@
 }
 
 .np-modal__price-amount {
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 700;
 }
 
 .np-modal__price-period {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     opacity: 0.7;
 }
@@ -525,8 +526,8 @@
     background: linear-gradient(135deg, #7b4dff, #b87cff);
     color: var(--np-white);
     border-radius: 999px;
-    padding: 12px 18px;
-    font-size: 14px;
+    padding: 12px 16px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
@@ -551,8 +552,8 @@
     background: rgba(180, 120, 255, 0.08);
     color: var(--np-white);
     border-radius: 999px;
-    padding: 8px 14px;
-    font-size: 12px;
+    padding: 8px 12px;
+    font-size: 11px;
     font-weight: 600;
     text-decoration: none;
     display: inline-flex;
