@@ -491,7 +491,6 @@
 
 
 
-}
 
 .np-modal__action-card {
     width: 100%;
@@ -508,7 +507,7 @@
 .np-modal__action-stack {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     gap: 12px;
     text-align: center;
 }
@@ -521,6 +520,7 @@
     width: 100%;
     color: var(--np-white);
 }
+.np-modal__price:empty {    display: none;}
 
 .np-modal__price-amount {
     font-size: 30px;
@@ -566,7 +566,7 @@
 .np-modal__install-link {
     border: 0;
     background: transparent;
-    color: rgba(244, 242, 255, 0.82);
+    color: var(--np-white);
     border-radius: 0;
     padding: 0;
     font-size: 13px;
@@ -616,7 +616,8 @@
     display: flex;
     flex-direction: row;
     gap: 12px;
-    justify-content: center;
+    justify-content: space-evenly;
+    width: 100%;
     padding: 0;
     align-items: center;
 }
