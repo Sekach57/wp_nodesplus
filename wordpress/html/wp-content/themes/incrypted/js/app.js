@@ -261,9 +261,6 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && modal.classList.contains('is-open')) {
-      closeModal();
-    }
     if (e.key !== 'Tab' || !modal.classList.contains('is-open')) {
       return;
     }

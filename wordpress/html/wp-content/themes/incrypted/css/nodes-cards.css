@@ -652,6 +652,7 @@
 }
 
 /* === Visibility fixes for modal elements === *//* 1. Close button X icon - ensure visible above overlays */.np-modal__close {    position: relative;    color: rgba(255, 255, 255, 0.9);    mix-blend-mode: normal;    filter: none;    opacity: 1;}.np-modal__close-icon {    position: relative;    z-index: 2;    mix-blend-mode: normal;    filter: none;    opacity: 1;}.np-modal__close::before,.np-modal__close::after {    z-index: 1;}/* 2. Twitter/X icon - override hardcoded dark fill */.np-modal__social-button[data-np-modal-twitter] svg,.np-modal__social-button[data-np-modal-twitter] svg path {    fill: rgba(255, 255, 255, 0.85);}.np-modal__social-button[data-np-modal-twitter]:hover svg,.np-modal__social-button[data-np-modal-twitter]:hover svg path {    fill: rgba(255, 255, 255, 1);}/* 3. Installation guide link - improved contrast */.np-modal .np-modal__install-link {    color: rgba(255, 255, 255, 0.75);    text-decoration: none;}.np-modal .np-modal__install-link:hover,.np-modal .np-modal__install-link:focus {    color: rgba(255, 255, 255, 0.95);    text-decoration: underline;    text-underline-offset: 3px;}.np-modal .np-modal__install-icon {    color: rgba(255, 255, 255, 0.75);    border-color: rgba(180, 120, 255, 0.4);}
+/* 4. Close button with Exit text */.np-modal__close { width: auto; padding: 0 16px; gap: 6px; border-radius: 999px; font-size: 14px; line-height: 1; }.np-modal__close-text { font-weight: 500; letter-spacing: 0.02em; }
 body.np-modal-open {
     overflow: hidden;
 }

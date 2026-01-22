@@ -140,6 +140,7 @@ function display_custom_nodes($atts) {
                                 <svg class="np-modal__close-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
                                     <path d="M6 6l12 12M18 6l-12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
+                                <span class="np-modal__close-text">Exit</span>
                             </button>
                         </div>
                         <div class="np-modal__body">
