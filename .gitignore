@@ -52,3 +52,7 @@
 # OS
 .DS_Store
 Thumbs.dbdb-import/
+
+# Production secrets
+telegram-bot/.env.prod
+telegram-bot/server_proxy.conf
