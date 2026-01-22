@@ -425,6 +425,12 @@
     justify-content: center;
 }
 
+.np-modal__actions-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
 .np-modal__card {
     background: transparent;
     border: 0;
@@ -562,6 +568,16 @@
     align-self: stretch;
 }
 
+.np-modal__guide {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.np-modal__guide:empty {
+    display: none;
+}
+
 .np-modal__secondary:hover,
 .np-modal__secondary:focus,
 .np-modal__secondary:focus-visible {
@@ -576,6 +592,10 @@
     justify-content: center;
     padding: 4px 0;
     align-items: center;
+}
+
+.np-modal__socials:empty {
+    display: none;
 }
 
 .np-modal__social-button {

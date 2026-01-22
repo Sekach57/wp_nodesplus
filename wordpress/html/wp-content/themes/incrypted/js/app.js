@@ -53,6 +53,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const telegramLink = modal.querySelector('[data-np-modal-telegram]');
   const twitterLink = modal.querySelector('[data-np-modal-twitter]');
   const guideLink = modal.querySelector('[data-np-modal-guide]');
+  const socialsWrap = modal.querySelector('[data-np-modal-socials]');
+  const guideWrap = modal.querySelector('[data-np-modal-guide-wrap]');
   const pillsContainer = modal.querySelector('.np-modal__pills');
   let lastTrigger = null;
 
@@ -97,13 +99,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function setSocialLink(el, url) {
     if (!el) {
-      return;
+      return false;
     }
     if (url) {
       el.href = url;
       el.style.display = '';
+      return true;
     } else {
       el.style.display = 'none';
+      return false;
     }
   }
 
@@ -162,10 +166,16 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (logoEl) {
       logoEl.classList.remove('is-visible');
     }
-    setSocialLink(discordLink, data.discord_url);
-    setSocialLink(telegramLink, data.telegram_url);
-    setSocialLink(twitterLink, data.twitter_url);
-    setSocialLink(guideLink, data.guide_url);
+    const hasDiscord = setSocialLink(discordLink, data.discord_url);
+    const hasTelegram = setSocialLink(telegramLink, data.telegram_url);
+    const hasTwitter = setSocialLink(twitterLink, data.twitter_url);
+    const hasGuide = setSocialLink(guideLink, data.guide_url);
+    if (socialsWrap) {
+      socialsWrap.style.display = (hasDiscord || hasTelegram || hasTwitter) ? '' : 'none';
+    }
+    if (guideWrap) {
+      guideWrap.style.display = hasGuide ? '' : 'none';
+    }
     setActionLink(data.add_to_cart_url, data.add_to_cart_text);
   }
 
