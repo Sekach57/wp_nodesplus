@@ -282,15 +282,14 @@
     align-items: center;
     justify-content: center;
     z-index: 9999;
-    --np-indigo: #1E2C68;
-    --np-primary: #364EB8;
-    --np-lavender: #B59ADE;
-    --np-lilac: #B59ADE;
-    --np-glow: rgba(181, 154, 222, 0.5);
-    --np-bg: #0B0C0E;
-    --np-white: #FFFFFF;
-    --np-text: #0B0C0E;
-    --np-muted: #666A72;
+    --np-indigo: #6d35c8;
+    --np-primary: #8a5cff;
+    --np-lavender: #b78bff;
+    --np-glow: rgba(180, 120, 255, 0.35);
+    --np-bg: rgba(15, 15, 22, 0.55);
+    --np-white: #f4f2ff;
+    --np-text: #f4f2ff;
+    --np-muted: rgba(210, 210, 230, 0.72);
 }
 
 .np-modal.is-open {
@@ -300,8 +299,21 @@
 .np-modal__backdrop {
     position: absolute;
     inset: 0;
-    background: linear-gradient(0deg, rgba(54, 78, 184, 0.12), rgba(54, 78, 184, 0.12)), rgba(0, 0, 0, 0.7);
+    background: radial-gradient(circle at 20% 10%, rgba(128, 88, 255, 0.15), transparent 55%),
+        radial-gradient(circle at 80% 90%, rgba(88, 140, 255, 0.12), transparent 55%),
+        rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(4px);
+}
+
+.np-modal__backdrop::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0.04) 1px, transparent 1px, transparent 120px),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0, rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 120px);
+    opacity: 0.4;
+    pointer-events: none;
 }
 
 .np-modal__panel {
@@ -309,12 +321,24 @@
     width: min(980px, 90vw);
     max-height: 85vh;
     background: var(--np-bg);
+    border: 1px solid rgba(180, 120, 255, 0.25);
     border-radius: 20px;
-    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55), 0 0 40px rgba(164, 96, 255, 0.25);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     z-index: 1;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.np-modal__panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top left, rgba(180, 120, 255, 0.15), transparent 45%),
+        radial-gradient(circle at bottom right, rgba(100, 160, 255, 0.12), transparent 50%);
+    pointer-events: none;
 }
 
 .np-modal__header {
@@ -373,11 +397,11 @@
 }
 
 .np-modal__body {
-    padding: 22px;
+    padding: 26px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: 24px;
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 28px;
+    align-items: start;
     flex: 1 1 auto;
     min-height: 0;
 }
@@ -388,12 +412,17 @@
     flex-direction: column;
 }
 
+.np-modal__column--actions {
+    align-items: center;
+    justify-content: center;
+}
+
 .np-modal__card {
-    background: var(--np-white);
-    border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    background: transparent;
+    border: 0;
+    border-radius: 18px;
+    padding: 0;
+    box-shadow: none;
 }
 
 .np-modal__details-panel {
@@ -447,9 +476,14 @@
 .np-modal__actions-panel {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 18px;
     justify-content: space-between;
-    height: 100%;
+    width: min(100%, 320px);
+    background: rgba(18, 18, 28, 0.72);
+    border: 1px solid rgba(180, 120, 255, 0.2);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 18px 50px rgba(96, 40, 160, 0.35);
 }
 
 .np-modal__price {
@@ -458,15 +492,16 @@
     justify-content: center;
     gap: 8px;
     align-self: center;
-    padding: 10px 18px;
+    padding: 8px 16px;
     border-radius: 999px;
-    background: linear-gradient(135deg, var(--np-primary), var(--np-lavender));
+    background: rgba(138, 92, 255, 0.25);
+    border: 1px solid rgba(180, 120, 255, 0.35);
     color: var(--np-white);
     letter-spacing: 0.2px;
 }
 
 .np-modal__price-amount {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
 }
 
@@ -477,8 +512,8 @@
 }
 
 .np-modal__action {
-    border: 1px solid var(--np-primary);
-    background: var(--np-primary);
+    border: 1px solid rgba(150, 100, 255, 0.75);
+    background: linear-gradient(135deg, #7b4dff, #b87cff);
     color: var(--np-white);
     border-radius: 999px;
     padding: 16px 24px;
@@ -496,16 +531,16 @@
 .np-modal__action:hover,
 .np-modal__action:focus,
 .np-modal__action:focus-visible {
-    background: var(--np-indigo);
-    border-color: var(--np-indigo);
+    background: linear-gradient(135deg, #6a3df2, #a56bff);
+    border-color: rgba(180, 120, 255, 0.9);
     color: var(--np-white);
-    box-shadow: 0 0 0 3px var(--np-glow);
+    box-shadow: 0 0 0 3px rgba(180, 120, 255, 0.25), 0 10px 30px rgba(120, 60, 200, 0.45);
 }
 
 .np-modal__secondary {
-    border: 1px solid var(--np-primary);
-    background: #f4f4f8;
-    color: var(--np-primary);
+    border: 1px solid rgba(180, 120, 255, 0.35);
+    background: rgba(180, 120, 255, 0.08);
+    color: var(--np-white);
     border-radius: 999px;
     padding: 10px 18px;
     font-size: 14px;
@@ -520,8 +555,8 @@
 .np-modal__secondary:hover,
 .np-modal__secondary:focus,
 .np-modal__secondary:focus-visible {
-    background: #edeff9;
-    color: var(--np-indigo);
+    background: rgba(180, 120, 255, 0.18);
+    color: var(--np-white);
 }
 
 .np-modal__social {
@@ -534,11 +569,11 @@
 }
 
 .np-modal__social-button {
-    width: 52px;
-    height: 52px;
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
-    border: 1px solid rgba(54, 78, 184, 0.35);
-    background: var(--np-white);
+    border: 1px solid rgba(180, 120, 255, 0.3);
+    background: rgba(255, 255, 255, 0.06);
     color: var(--np-primary);
     display: inline-flex;
     align-items: center;
@@ -554,8 +589,8 @@
 }
 
 .np-modal__social-button:hover {
-    background: #f0f3ff;
-    border-color: rgba(54, 78, 184, 0.6);
+    background: rgba(180, 120, 255, 0.18);
+    border-color: rgba(180, 120, 255, 0.6);
 }
 
 body.np-modal-open {
@@ -565,6 +600,11 @@ body.np-modal-open {
 @media (max-width: 900px) {
     .np-modal__body {
         grid-template-columns: 1fr;
+    }
+
+    .np-modal__column--actions {
+        align-items: stretch;
+        justify-content: flex-start;
     }
 
     .np-modal__details-panel {
@@ -589,16 +629,17 @@ body.np-modal-open {
     }
 
     .np-modal__body {
-        padding: 18px;
-        gap: 18px;
+        padding: 20px;
+        gap: 20px;
     }
 
     .np-modal__card {
-        padding: 18px;
+        padding: 0;
     }
 
     .np-modal__actions-panel {
         gap: 14px;
+        width: 100%;
     }
 }
 
@@ -652,7 +693,7 @@ body.np-modal-open {
     }
 
     .np-modal__card {
-        padding: 16px;
+        padding: 0;
         border-radius: 12px;
     }
 
@@ -661,7 +702,7 @@ body.np-modal-open {
     }
 
     .np-modal__price-amount {
-        font-size: 24px;
+        font-size: 22px;
     }
 
     .np-modal__action {
@@ -672,6 +713,44 @@ body.np-modal-open {
     .np-modal__secondary {
         font-size: 14px;
     }
+}
+
+.np-modal .np-pill {
+    border-radius: 999px;
+    border: 1px solid rgba(180, 120, 255, 0.25);
+    background: rgba(180, 120, 255, 0.12);
+    color: var(--np-white);
+}
+
+.np-modal .np-pill--tier {
+    background: linear-gradient(135deg, rgba(138, 92, 255, 0.9), rgba(183, 139, 255, 0.9));
+    color: #ffffff;
+}
+
+.np-modal .np-pill--tier-top {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #ffffff;
+}
+
+.np-modal .np-pill--tier-1 {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: #ffffff;
+}
+
+.np-modal .np-pill--tier-2 {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #ffffff;
+}
+
+.np-modal .np-pill--tier-3 {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: #ffffff;
+}
+
+.np-modal .np-pill--category {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--np-white);
+    border-color: rgba(180, 120, 255, 0.2);
 }
 
 /* Social media icon content */
