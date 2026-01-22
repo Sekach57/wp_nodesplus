@@ -389,11 +389,16 @@
     justify-content: center;
 }
 
-.np-modal__close svg {
+.np-modal__close-icon {
     display: block;
     width: 18px;
     height: 18px;
     stroke: currentColor;
+    fill: none;
+}
+
+.np-modal__close-icon path {
+    stroke: #f4f2ff;
     fill: none;
 }
 
