@@ -380,8 +380,8 @@ h2 {
     font-weight: 500;
     margin-bottom: 50px; }
   .nodes .node_items {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 20px;
     max-width: 960px;
     margin: 0 auto; }
@@ -944,6 +944,8 @@ footer {
       width: calc(50% - 12px);
       flex: unset; } }
 @media only screen and (max-width: 768px) {
+  .nodes .node_items {
+    grid-template-columns: 1fr; }
   .btn_2 {
     font-size: 14px; }
 
@@ -1864,4 +1866,8 @@ body.np-discord-access-open {
   overflow: hidden; }
 
 /*# sourceMappingURL=style.css.map */
+
+
+
+
 
