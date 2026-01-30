@@ -947,7 +947,7 @@ footer {
     .follow_us .platform_card {
       width: calc(50% - 12px);
       flex: unset; } }
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 768px) {\r\n  .nodes .nodes__screen {\r\n    padding: 32px 20px; }
   .nodes .node_items {
     grid-template-columns: 1fr; }
   .btn_2 {
@@ -1870,6 +1870,7 @@ body.np-discord-access-open {
   overflow: hidden; }
 
 /*# sourceMappingURL=style.css.map */
+
 
 
 
