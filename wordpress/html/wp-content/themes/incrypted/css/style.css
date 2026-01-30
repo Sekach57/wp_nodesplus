@@ -217,6 +217,7 @@ h2 {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    flex-wrap: wrap;
     gap: 3px;
     margin-left: 20px; }
     .header .cart_icon .items_in_cart {
@@ -445,6 +446,7 @@ h2 {
     align-items: center;
     justify-content: flex-start;
     flex-wrap: wrap;
+    flex-wrap: wrap;
     gap: 12px;
     color: #ffffff;
     font-family: "Onest", sans-serif;
@@ -509,7 +511,8 @@ h2 {
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: flex-start; }
+    justify-content: flex-start;
+    flex-wrap: wrap; }
     .nodes .node_item_action_btns:before, .nodes .node_item_action_btns:after {
       content: "";
       display: block;
@@ -559,6 +562,7 @@ h2 {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    flex-wrap: wrap;
     gap: 16px;
     color: #ffffff;
     font-family: "Inter Tight", sans-serif;
@@ -1866,6 +1870,7 @@ body.np-discord-access-open {
   overflow: hidden; }
 
 /*# sourceMappingURL=style.css.map */
+
 
 
 

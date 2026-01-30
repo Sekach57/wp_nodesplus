@@ -286,6 +286,7 @@ h2 {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    flex-wrap: wrap;
     gap: 3px;
     margin-left: 30px;
 
@@ -673,6 +674,7 @@ h2 {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    flex-wrap: wrap;
 
     &:before,
     &:after {
@@ -750,6 +752,7 @@ h2 {
     display: flex;
     align-items: center;
     justify-content: flex-start;
+    flex-wrap: wrap;
     gap: 16px;
     color: $white-color;
     font-family: $secondary-font;
@@ -1835,6 +1838,7 @@ body > .woocommerce {
     gap: 12px;
   }
 }
+
 
 
 
