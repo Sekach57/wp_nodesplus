@@ -1432,6 +1432,16 @@ footer {
   }
 
   .nodes {
+    padding: 60px 0 60px;
+
+    h2 {
+      margin-bottom: 30px;
+    }
+
+    .nodes__screen {
+      padding: 32px 20px;
+    }
+
     .node_items {
       grid-template-columns: 1fr;
     }
@@ -1461,18 +1471,13 @@ footer {
   }
 
   .cases {
+    display: none;
     padding-top: 60px;
 
     h2 {
       margin-bottom: 30px;
     }
 
-  .nodes__screen {
-    margin-top: 24px;
-    padding: 48px 40px;
-    background: linear-gradient(180deg, #12151C 0%, #0B0C0E 100%);
-    border: 1px solid #1C2129;
-  }
     .case {
       width: 100%;
     }
@@ -1904,6 +1909,8 @@ body > .woocommerce {
     gap: 12px;
   }
 }
+
+
 
 
 

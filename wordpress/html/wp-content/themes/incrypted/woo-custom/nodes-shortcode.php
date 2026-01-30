@@ -90,7 +90,8 @@ function display_custom_nodes($atts) {
     <section id="nodes" class="nodes">
         <div class="container">
             <h2><?= $nodes["header"] ?></h2>
-            <div class="nodes__screen">\r\n            <div class="node_items">
+            <div class="nodes__screen">
+                <div class="node_items">
                 <?php while ($products->have_posts()) : $products->the_post();
                     $product = wc_get_product(get_the_ID());
                     $price = $product->get_price_html();
@@ -125,7 +126,10 @@ function display_custom_nodes($atts) {
                         </div>
                     </div>
                 <?php endwhile; wp_reset_postdata(); ?>
-            </div>\r\n        </div>\r\n\r\n                <!-- Node Details Modal -->
+            </div>
+        </div>
+
+                <!-- Node Details Modal -->
                 <div class="np-modal" id="np-node-modal" aria-hidden="true">
                     <div class="np-modal__backdrop" data-np-modal-close></div>
                     <div class="np-modal__panel" role="dialog" aria-modal="true" aria-labelledby="np-node-modal-title">
@@ -182,4 +186,8 @@ function display_custom_nodes($atts) {
     <?php
     return ob_get_clean();
 }
+
+
+
+
 
