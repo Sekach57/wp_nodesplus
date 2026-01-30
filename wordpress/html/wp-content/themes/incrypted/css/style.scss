@@ -309,7 +309,7 @@ h2 {
 }
 
 .hero {
-  margin-bottom: 126px;
+  margin-bottom: 0;
 
   h1 {
     margin-bottom: 20px;
@@ -1188,7 +1188,7 @@ footer {
   }
 
   .hero {
-    margin-bottom: 80px;
+    margin-bottom: 0;
 
     h1 {
       font-size: 48px;
@@ -1831,5 +1831,6 @@ body > .woocommerce {
     gap: 12px;
   }
 }
+
 
 

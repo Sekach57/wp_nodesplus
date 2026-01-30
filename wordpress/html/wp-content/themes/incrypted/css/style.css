@@ -234,7 +234,7 @@ h2 {
       background: #ffffff; }
 
 .hero {
-  margin-bottom: 126px; }
+  margin-bottom: 0; }
   .hero h1 {
     margin-bottom: 20px;
     color: #ffffff;
@@ -870,7 +870,7 @@ footer {
         display: flex; }
 
   .hero {
-    margin-bottom: 80px; }
+    margin-bottom: 0; }
     .hero h1 {
       font-size: 48px; }
     .hero p {
@@ -1864,3 +1864,4 @@ body.np-discord-access-open {
   overflow: hidden; }
 
 /*# sourceMappingURL=style.css.map */
+
