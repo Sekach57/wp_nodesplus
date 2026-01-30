@@ -91,13 +91,63 @@ function display_custom_nodes($atts) {
         <div class="container">
             <h2><?= $nodes["header"] ?></h2>
             <div class="nodes__screen">
+            <div class="nodes-filters" data-nodes-filters>
+                <div class="nodes-filters__search">
+                    <label class="nodes-filters__label" for="nodes-filter-search">Search</label>
+                    <input type="text" id="nodes-filter-search" class="nodes-filter-search" placeholder="Search nodes" autocomplete="off" />
+                </div>
+                <div class="nodes-filters__group">
+                    <div class="nodes-filters__label">Tier</div>
+                    <div class="nodes-filter-pills" data-filter-group="tier"></div>
+                </div>
+                <div class="nodes-filters__group">
+                    <div class="nodes-filters__label">Categories</div>
+                    <div class="nodes-filter-pills" data-filter-group="category"></div>
+                </div>
+                <div class="nodes-filters__group nodes-filters__price">
+                    <div class="nodes-filters__label">Price range</div>
+                    <div class="nodes-filters__inputs">
+                        <input type="number" class="nodes-filter-min" placeholder="Min" step="0.01" min="0" />
+                        <input type="number" class="nodes-filter-max" placeholder="Max" step="0.01" min="0" />
+                    </div>
+                </div>
+                <div class="nodes-filters__selected">
+                    <div class="nodes-filters__label">Selected filters</div>
+                    <div class="nodes-filter-chips" data-filter-chips></div>
+                </div>
+            </div>
                 <div class="node_items">
-                <?php while ($products->have_posts()) : $products->the_post();
+                                <?php while ($products->have_posts()) : $products->the_post();
                     $product = wc_get_product(get_the_ID());
                     $price = $product->get_price_html();
                     $image = wp_get_attachment_image_src(get_post_thumbnail_id(), 'full');
+
+                    $price_number = $product ? wc_format_decimal($product->get_price(), 2) : '';
+                    $tier_raw = get_post_meta(get_the_ID(), 'np_project_tier', true);
+                    $tier_normalized = strtolower(trim((string) $tier_raw));
+                    $tier_normalized = preg_replace('/[^a-z0-9]+/', '', $tier_normalized);
+
+                    $categories_raw = get_post_meta(get_the_ID(), 'np_project_categories', true);
+                    $categories_list = [];
+                    if (is_array($categories_raw)) {
+                        $categories_list = $categories_raw;
+                    } elseif (!empty($categories_raw)) {
+                        $categories_list = [$categories_raw];
+                    }
+
+                    $categories_normalized = [];
+                    foreach ($categories_list as $cat) {
+                        $cat_norm = strtolower(trim((string) $cat));
+                        $cat_norm = preg_replace('/\s+/', '-', $cat_norm);
+                        $cat_norm = preg_replace('/[^a-z0-9-]+/', '', $cat_norm);
+                        if ($cat_norm !== '') {
+                            $categories_normalized[] = $cat_norm;
+                        }
+                    }
+                    $categories_attr = implode(',', $categories_normalized);
+                    $name_attr = strtolower(trim(wp_strip_all_tags(get_the_title())));
                     ?>
-                    <div class="node_item" data-product-id="<?php echo get_the_ID(); ?>">
+                    <div class="node_item" data-product-id="<?php echo get_the_ID(); ?>" data-tier="<?php echo esc_attr($tier_normalized); ?>" data-categories="<?php echo esc_attr($categories_attr); ?>" data-price="<?php echo esc_attr($price_number); ?>" data-name="<?php echo esc_attr($name_attr); ?>">
                         <div class="node_item_info">
                             <div class="node_item_title">
                                 <?php if ($image): ?>
@@ -186,6 +236,10 @@ function display_custom_nodes($atts) {
     <?php
     return ob_get_clean();
 }
+
+
+
+
 
 
 
