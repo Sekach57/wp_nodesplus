@@ -11,6 +11,11 @@ class INCR_Nodes_Admin {
         add_action('admin_post_incr_sync_all_nodes', [__CLASS__, 'handle_sync_all_nodes']);
         add_action('admin_post_incr_save_nodes_columns', [__CLASS__, 'handle_save_nodes_columns']);
         add_action('incr_sync_all_nodes_job', [__CLASS__, 'run_sync_all_nodes']);
+
+        // Schedule twice daily sync if not already scheduled
+        if (!wp_next_scheduled('incr_sync_all_nodes_job')) {
+            wp_schedule_event(time(), 'twicedaily', 'incr_sync_all_nodes_job');
+        }
     }
 
     public static function add_menu() {
