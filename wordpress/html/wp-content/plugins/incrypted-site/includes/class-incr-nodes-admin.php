@@ -436,6 +436,14 @@ class INCR_Nodes_Admin {
                         } else {
                             echo '<td>â€”</td>';
                         }
+                    } elseif ($key === 'node_type') {
+                        $value = isset($row[$key]) ? $row[$key] : '';
+                        if ($value) {
+                            $filter_url = add_query_arg(['page' => 'incr-nodes-dashboard', 'node_type' => $value], admin_url('admin.php'));
+                            echo '<td><a href="' . esc_url($filter_url) . '">' . esc_html($value) . '</a></td>';
+                        } else {
+                            echo '<td>—</td>';
+                        }
                     } elseif ($key === 'actions') {
                         echo '<td><a href="#" class="incr-view-raw" data-target="' . esc_attr($raw_id) . '">View raw</a></td>';
                     } else {
