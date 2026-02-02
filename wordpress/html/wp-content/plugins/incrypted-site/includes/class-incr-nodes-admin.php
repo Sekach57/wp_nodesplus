@@ -11,6 +11,7 @@ class INCR_Nodes_Admin {
         add_action('admin_post_incr_sync_all_nodes', [__CLASS__, 'handle_sync_all_nodes']);
         add_action('admin_post_incr_save_nodes_columns', [__CLASS__, 'handle_save_nodes_columns']);
         add_action('incr_sync_all_nodes_job', [__CLASS__, 'run_sync_all_nodes']);
+        add_action('admin_post_incr_send_tg_message', [__CLASS__, 'handle_send_tg_message']);
 
         // Schedule twice daily sync if not already scheduled
         if (!wp_next_scheduled('incr_sync_all_nodes_job')) {
@@ -51,6 +52,14 @@ class INCR_Nodes_Admin {
             'manage_options',
             'incr-tg-notifications',
             [__CLASS__, 'render_telegram_notifications']
+        );
+        add_submenu_page(
+            'incr-nodes-dashboard',
+            'Send TG Message',
+            'Send TG Message',
+            'manage_options',
+            'incr-send-tg-message',
+            [__CLASS__, 'render_send_tg_message']
         );
     }
 
@@ -832,4 +841,236 @@ class INCR_Nodes_Admin {
             echo '</tbody></table>';
         }
     }
+
+    public static function render_send_tg_message() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
+        }
+
+        global $wpdb;
+        $links_table = $wpdb->prefix . 'incr_telegram_links';
+
+        // Get users with Telegram linked
+        $tg_users = $wpdb->get_results(
+            "SELECT l.wp_user_id, l.tg_username, l.telegram_chat_id, u.display_name, u.user_email
+             FROM {$links_table} l
+             INNER JOIN {$wpdb->users} u ON u.ID = l.wp_user_id
+             ORDER BY u.display_name ASC",
+            ARRAY_A
+        );
+
+        $notice = isset($_GET['tg_notice']) ? sanitize_text_field(wp_unslash($_GET['tg_notice'])) : '';
+
+        echo '<div class="wrap">';
+        echo '<h1>Send TG Message</h1>';
+
+        if ($notice === 'sent') {
+            echo '<div class="notice notice-success is-dismissible"><p>Message sent successfully!</p></div>';
+        } elseif ($notice === 'error') {
+            echo '<div class="notice notice-error is-dismissible"><p>Failed to send message. Check error log.</p></div>';
+        } elseif ($notice === 'no_user') {
+            echo '<div class="notice notice-warning is-dismissible"><p>User not found or not linked to Telegram.</p></div>';
+        } elseif ($notice === 'no_token') {
+            echo '<div class="notice notice-error is-dismissible"><p>Telegram bot token not configured.</p></div>';
+        } elseif ($notice === 'empty_message') {
+            echo '<div class="notice notice-warning is-dismissible"><p>Message cannot be empty.</p></div>';
+        }
+
+        if (empty($tg_users)) {
+            echo '<div class="notice notice-warning"><p>No users with Telegram linked.</p></div>';
+            echo '</div>';
+            return;
+        }
+
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="max-width:600px;">';
+        echo '<input type="hidden" name="action" value="incr_send_tg_message" />';
+        echo wp_nonce_field('incr_send_tg_message', 'incr_send_tg_message_nonce', true, false);
+
+        echo '<table class="form-table">';
+
+        // User selector
+        echo '<tr><th><label for="tg_user_id">Select User</label></th><td>';
+        echo '<select name="tg_user_id" id="tg_user_id" style="width:100%;" required>';
+        echo '<option value="">— Select user —</option>';
+        foreach ($tg_users as $user) {
+            $label = $user['display_name'] ?: 'User #' . $user['wp_user_id'];
+            $label .= ' (' . $user['user_email'] . ')';
+            if ($user['tg_username']) {
+                $label .= ' @' . $user['tg_username'];
+            }
+            echo '<option value="' . esc_attr($user['wp_user_id']) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select>';
+        echo '</td></tr>';
+
+        // Message textarea
+        echo '<tr><th><label for="tg_message">Message</label></th><td>';
+        echo '<textarea name="tg_message" id="tg_message" rows="6" style="width:100%;" required placeholder="Enter your message here..."></textarea>';
+        echo '<p class="description">Plain text. Emojis supported.</p>';
+        echo '</td></tr>';
+
+        echo '</table>';
+
+        echo '<p><button type="submit" class="button button-primary button-large">Send Message</button></p>';
+        echo '</form>';
+
+        // Recent sent messages log
+        echo '<h2 style="margin-top:40px;">Recent Manual Messages</h2>';
+        $log_table = $wpdb->prefix . 'incr_telegram_manual_messages';
+        $log_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $log_table));
+
+        if ($log_exists === $log_table) {
+            $recent = $wpdb->get_results(
+                "SELECT m.*, u.display_name, u.user_email
+                 FROM {$log_table} m
+                 LEFT JOIN {$wpdb->users} u ON u.ID = m.wp_user_id
+                 ORDER BY m.sent_at DESC
+                 LIMIT 20",
+                ARRAY_A
+            );
+
+            if (!empty($recent)) {
+                echo '<table class="widefat fixed striped">';
+                echo '<thead><tr><th>Date</th><th>User</th><th>Message</th><th>Status</th></tr></thead><tbody>';
+                foreach ($recent as $row) {
+                    $user_label = $row['display_name'] ?: 'User #' . $row['wp_user_id'];
+                    $status_color = $row['status'] === 'sent' ? '#28a745' : '#dc3545';
+                    echo '<tr>';
+                    echo '<td>' . esc_html($row['sent_at']) . '</td>';
+                    echo '<td>' . esc_html($user_label) . '</td>';
+                    echo '<td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' . esc_html($row['message']) . '</td>';
+                    echo '<td style="color:' . $status_color . ';">' . esc_html(ucfirst($row['status'])) . '</td>';
+                    echo '</tr>';
+                }
+                echo '</tbody></table>';
+            } else {
+                echo '<p>No messages sent yet.</p>';
+            }
+        } else {
+            echo '<p>Message log table will be created after first message.</p>';
+        }
+
+        echo '</div>';
+    }
+
+    public static function handle_send_tg_message() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
+        }
+
+        if (empty($_POST['incr_send_tg_message_nonce']) || !wp_verify_nonce($_POST['incr_send_tg_message_nonce'], 'incr_send_tg_message')) {
+            wp_die('Invalid nonce');
+        }
+
+        $user_id = isset($_POST['tg_user_id']) ? (int) $_POST['tg_user_id'] : 0;
+        $message = isset($_POST['tg_message']) ? sanitize_textarea_field(wp_unslash($_POST['tg_message'])) : '';
+
+        $redirect_url = admin_url('admin.php?page=incr-send-tg-message');
+
+        if (!$user_id) {
+            wp_safe_redirect(add_query_arg('tg_notice', 'no_user', $redirect_url));
+            exit;
+        }
+
+        if (trim($message) === '') {
+            wp_safe_redirect(add_query_arg('tg_notice', 'empty_message', $redirect_url));
+            exit;
+        }
+
+        // Get bot token
+        $token = '';
+        if (function_exists('incr_get_config')) {
+            $token = incr_get_config('INCR_TELEGRAM_BOT_TOKEN');
+        }
+        if ($token === '' && defined('INCR_TELEGRAM_BOT_TOKEN')) {
+            $token = INCR_TELEGRAM_BOT_TOKEN;
+        }
+        if ($token === '') {
+            $env_value = getenv('INCR_TELEGRAM_BOT_TOKEN');
+            if ($env_value !== false) {
+                $token = $env_value;
+            }
+        }
+
+        if (!$token) {
+            wp_safe_redirect(add_query_arg('tg_notice', 'no_token', $redirect_url));
+            exit;
+        }
+
+        // Get user's chat_id
+        global $wpdb;
+        $links_table = $wpdb->prefix . 'incr_telegram_links';
+        $chat_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT telegram_chat_id FROM {$links_table} WHERE wp_user_id = %d",
+            $user_id
+        ));
+
+        if (!$chat_id) {
+            wp_safe_redirect(add_query_arg('tg_notice', 'no_user', $redirect_url));
+            exit;
+        }
+
+        // Send message
+        $success = self::send_tg_message($token, $chat_id, $message);
+
+        // Log the message
+        self::log_manual_message($user_id, $message, $success ? 'sent' : 'failed');
+
+        $notice = $success ? 'sent' : 'error';
+        wp_safe_redirect(add_query_arg('tg_notice', $notice, $redirect_url));
+        exit;
+    }
+
+    private static function send_tg_message($token, $chat_id, $text) {
+        $response = wp_remote_post(
+            "https://api.telegram.org/bot{$token}/sendMessage",
+            [
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => wp_json_encode([
+                    'chat_id' => $chat_id,
+                    'text' => $text,
+                ]),
+                'timeout' => 15,
+            ]
+        );
+
+        if (is_wp_error($response)) {
+            error_log('INCR Send TG Message: ' . $response->get_error_message());
+            return false;
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        if ($code < 200 || $code >= 300) {
+            error_log('INCR Send TG Message: Telegram API HTTP ' . $code . ' - ' . wp_remote_retrieve_body($response));
+            return false;
+        }
+
+        return true;
+    }
+
+    private static function log_manual_message($user_id, $message, $status) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'incr_telegram_manual_messages';
+
+        // Create table if not exists
+        $wpdb->query("CREATE TABLE IF NOT EXISTS {$table} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            wp_user_id BIGINT(20) UNSIGNED NOT NULL,
+            message TEXT NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'sent',
+            sent_at DATETIME NOT NULL,
+            sent_by BIGINT(20) UNSIGNED NOT NULL,
+            PRIMARY KEY (id),
+            KEY wp_user_id (wp_user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $wpdb->insert($table, [
+            'wp_user_id' => $user_id,
+            'message' => $message,
+            'status' => $status,
+            'sent_at' => current_time('mysql'),
+            'sent_by' => get_current_user_id(),
+        ]);
+    }
+
 }
