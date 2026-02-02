@@ -210,11 +210,20 @@ class INCR_Nodes_Admin {
 
         $filters = [
             'user_id' => isset($_GET['user_id']) ? (int) $_GET['user_id'] : '',
+            'user_email' => isset($_GET['user_email']) ? sanitize_email(wp_unslash($_GET['user_email'])) : '',
             'node_type' => isset($_GET['node_type']) ? sanitize_text_field(wp_unslash($_GET['node_type'])) : '',
             'status' => isset($_GET['status']) ? sanitize_text_field(wp_unslash($_GET['status'])) : '',
             'due_from' => isset($_GET['due_from']) ? sanitize_text_field(wp_unslash($_GET['due_from'])) : '',
             'due_to' => isset($_GET['due_to']) ? sanitize_text_field(wp_unslash($_GET['due_to'])) : '',
         ];
+
+        // If email provided but not user_id, look up user_id
+        if ($filters['user_email'] && !$filters['user_id']) {
+            $user = get_user_by('email', $filters['user_email']);
+            if ($user) {
+                $filters['user_id'] = $user->ID;
+            }
+        }
 
         $page = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
         $per_page = 20;
@@ -289,7 +298,8 @@ class INCR_Nodes_Admin {
         echo '<form method="get" style="margin-bottom: 16px;">';
         echo '<input type="hidden" name="page" value="incr-nodes-dashboard" />';
         echo '<div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">';
-        echo '<label>User ID<br><input type="number" name="user_id" value="' . esc_attr($filters['user_id']) . '" style="width:140px;"></label>';
+        echo '<label>User ID<br><input type="number" name="user_id" value="' . esc_attr($filters['user_id']) . '" style="width:100px;"></label>';
+        echo '<label>Email<br><input type="email" name="user_email" value="' . esc_attr($filters['user_email']) . '" placeholder="user@example.com" style="width:200px;"></label>';
         echo '<label>Node Type<br><select name="node_type"><option value="">All</option>';
         foreach ($node_types as $type) {
             $selected = $filters['node_type'] === $type ? ' selected' : '';
@@ -312,6 +322,7 @@ class INCR_Nodes_Admin {
         $base_filters = [
             'page' => 'incr-nodes-dashboard',
             'user_id' => $filters['user_id'] ?: null,
+            'user_email' => $filters['user_email'] ?: null,
             'node_type' => $filters['node_type'] ?: null,
             'due_from' => $filters['due_from'] ?: null,
             'due_to' => $filters['due_to'] ?: null,
@@ -373,6 +384,7 @@ class INCR_Nodes_Admin {
         $base_table_filters = [
             'page' => 'incr-nodes-dashboard',
             'user_id' => $filters['user_id'] ?: null,
+            'user_email' => $filters['user_email'] ?: null,
             'node_type' => $filters['node_type'] ?: null,
             'due_from' => $filters['due_from'] ?: null,
             'due_to' => $filters['due_to'] ?: null,
