@@ -39,6 +39,14 @@ class INCR_Nodes_Admin {
             'incr-telegram-links',
             [__CLASS__, 'render_telegram_links']
         );
+        add_submenu_page(
+            'incr-nodes-dashboard',
+            'TG Notifications',
+            'TG Notifications',
+            'manage_options',
+            'incr-tg-notifications',
+            [__CLASS__, 'render_telegram_notifications']
+        );
     }
 
     public static function handle_refresh_user_nodes() {
@@ -534,6 +542,111 @@ class INCR_Nodes_Admin {
             $base = add_query_arg(
                 [
                     'page' => 'incr-telegram-links',
+                    'paged' => '%#%',
+                ],
+                admin_url('admin.php')
+            );
+            $page_links = paginate_links([
+                'base' => $base,
+                'format' => '',
+                'prev_text' => '«',
+                'next_text' => '»',
+                'total' => $total_pages,
+                'current' => $page,
+            ]);
+            if ($page_links) {
+                echo '<div class="tablenav"><div class="tablenav-pages">' . $page_links . '</div></div>';
+            }
+        }
+
+        echo '</div>';
+    }
+
+    public static function render_telegram_notifications() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
+        }
+
+        global $wpdb;
+        $notifications_table = $wpdb->prefix . 'incr_telegram_notifications';
+        $links_table = $wpdb->prefix . 'incr_telegram_links';
+        $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $notifications_table));
+
+        echo '<div class="wrap">';
+        echo '<h1>TG Notifications</h1>';
+
+        if ($table_exists !== $notifications_table) {
+            echo '<div class="notice notice-warning"><p>Telegram notifications table not found.</p></div>';
+            echo '</div>';
+            return;
+        }
+
+        $per_page = 20;
+        $page = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
+        $offset = ($page - 1) * $per_page;
+
+        $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$notifications_table}");
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT
+                    n.id, n.wp_user_id, n.node_id, n.notif_type, n.sent_at,
+                    u.user_email, u.display_name,
+                    l.tg_username
+                 FROM {$notifications_table} n
+                 LEFT JOIN {$wpdb->users} u ON u.ID = n.wp_user_id
+                 LEFT JOIN {$links_table} l ON l.wp_user_id = n.wp_user_id
+                 ORDER BY n.sent_at DESC
+                 LIMIT %d OFFSET %d",
+                $per_page,
+                $offset
+            ),
+            ARRAY_A
+        );
+
+        $notif_type_labels = [
+            'overdue'   => 'Overdue',
+            'due_today' => 'Due Today',
+            'due_24h'   => 'Due in 24h',
+            'due_72h'   => 'Due in 72h',
+        ];
+
+        echo '<table class="widefat fixed striped">';
+        echo '<thead><tr>';
+        echo '<th>Date/Time</th>';
+        echo '<th>User</th>';
+        echo '<th>Email</th>';
+        echo '<th>Telegram</th>';
+        echo '<th>Node ID</th>';
+        echo '<th>Type</th>';
+        echo '</tr></thead><tbody>';
+
+        if (empty($rows)) {
+            echo '<tr><td colspan="6">No notifications found.</td></tr>';
+        } else {
+            foreach ($rows as $row) {
+                $user_label = $row['display_name'] ? $row['display_name'] : ('User #' . $row['wp_user_id']);
+                $profile_url = admin_url('user-edit.php?user_id=' . (int) $row['wp_user_id']);
+                $tg_display = $row['tg_username'] ? ('@' . $row['tg_username']) : '-';
+                $type_label = isset($notif_type_labels[$row['notif_type']]) ? $notif_type_labels[$row['notif_type']] : $row['notif_type'];
+
+                echo '<tr>';
+                echo '<td>' . esc_html($row['sent_at']) . '</td>';
+                echo '<td><a href="' . esc_url($profile_url) . '">' . esc_html($user_label) . '</a></td>';
+                echo '<td>' . esc_html($row['user_email'] ?: '-') . '</td>';
+                echo '<td>' . esc_html($tg_display) . '</td>';
+                echo '<td>' . esc_html($row['node_id']) . '</td>';
+                echo '<td>' . esc_html($type_label) . '</td>';
+                echo '</tr>';
+            }
+        }
+
+        echo '</tbody></table>';
+
+        $total_pages = $per_page > 0 ? (int) ceil($total / $per_page) : 1;
+        if ($total_pages > 1) {
+            $base = add_query_arg(
+                [
+                    'page' => 'incr-tg-notifications',
                     'paged' => '%#%',
                 ],
                 admin_url('admin.php')
