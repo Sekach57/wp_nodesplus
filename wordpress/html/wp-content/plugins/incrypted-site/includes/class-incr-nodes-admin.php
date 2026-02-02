@@ -575,6 +575,7 @@ class INCR_Nodes_Admin {
         global $wpdb;
         $notifications_table = $wpdb->prefix . 'incr_telegram_notifications';
         $links_table = $wpdb->prefix . 'incr_telegram_links';
+        $nodes_table = $wpdb->prefix . 'incr_nodes';
         $table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $notifications_table));
 
         echo '<div class="wrap">';
@@ -586,6 +587,11 @@ class INCR_Nodes_Admin {
             return;
         }
 
+        // Upcoming notifications section
+        self::render_upcoming_notifications();
+
+        echo '<h2>Sent Notifications</h2>';
+
         $per_page = 20;
         $page = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
         $offset = ($page - 1) * $per_page;
@@ -596,10 +602,12 @@ class INCR_Nodes_Admin {
                 "SELECT
                     n.id, n.wp_user_id, n.node_id, n.notif_type, n.sent_at,
                     u.user_email, u.display_name,
-                    l.tg_username
+                    l.tg_username,
+                    nd.node_type
                  FROM {$notifications_table} n
                  LEFT JOIN {$wpdb->users} u ON u.ID = n.wp_user_id
                  LEFT JOIN {$links_table} l ON l.wp_user_id = n.wp_user_id
+                 LEFT JOIN {$nodes_table} nd ON nd.node_id = n.node_id
                  ORDER BY n.sent_at DESC
                  LIMIT %d OFFSET %d",
                 $per_page,
@@ -621,25 +629,28 @@ class INCR_Nodes_Admin {
         echo '<th>User</th>';
         echo '<th>Email</th>';
         echo '<th>Telegram</th>';
+        echo '<th>Node</th>';
         echo '<th>Node ID</th>';
         echo '<th>Type</th>';
         echo '</tr></thead><tbody>';
 
         if (empty($rows)) {
-            echo '<tr><td colspan="6">No notifications found.</td></tr>';
+            echo '<tr><td colspan="7">No notifications found.</td></tr>';
         } else {
             foreach ($rows as $row) {
                 $user_label = $row['display_name'] ? $row['display_name'] : ('User #' . $row['wp_user_id']);
                 $profile_url = admin_url('user-edit.php?user_id=' . (int) $row['wp_user_id']);
                 $tg_display = $row['tg_username'] ? ('@' . $row['tg_username']) : '-';
                 $type_label = isset($notif_type_labels[$row['notif_type']]) ? $notif_type_labels[$row['notif_type']] : $row['notif_type'];
+                $node_name = $row['node_type'] ? ucfirst($row['node_type']) : '-';
 
                 echo '<tr>';
                 echo '<td>' . esc_html($row['sent_at']) . '</td>';
                 echo '<td><a href="' . esc_url($profile_url) . '">' . esc_html($user_label) . '</a></td>';
                 echo '<td>' . esc_html($row['user_email'] ?: '-') . '</td>';
                 echo '<td>' . esc_html($tg_display) . '</td>';
-                echo '<td>' . esc_html($row['node_id']) . '</td>';
+                echo '<td>' . esc_html($node_name) . '</td>';
+                echo '<td style="font-size:11px;">' . esc_html($row['node_id']) . '</td>';
                 echo '<td>' . esc_html($type_label) . '</td>';
                 echo '</tr>';
             }
@@ -659,8 +670,8 @@ class INCR_Nodes_Admin {
             $page_links = paginate_links([
                 'base' => $base,
                 'format' => '',
-                'prev_text' => 'Â«',
-                'next_text' => 'Â»',
+                'prev_text' => '«',
+                'next_text' => '»',
                 'total' => $total_pages,
                 'current' => $page,
             ]);
@@ -670,5 +681,135 @@ class INCR_Nodes_Admin {
         }
 
         echo '</div>';
+    }
+
+    private static function render_upcoming_notifications() {
+        global $wpdb;
+        $links_table = $wpdb->prefix . 'incr_telegram_links';
+        $nodes_table = $wpdb->prefix . 'incr_nodes';
+        $notifications_table = $wpdb->prefix . 'incr_telegram_notifications';
+
+        $now = current_time('mysql');
+        $today_end = current_time('Y-m-d') . ' 23:59:59';
+        $in_24h = date('Y-m-d H:i:s', strtotime('+24 hours', current_time('timestamp')));
+        $in_72h = date('Y-m-d H:i:s', strtotime('+72 hours', current_time('timestamp')));
+
+        // Get users with Telegram linked and their nodes that need notifications
+        $sql = "SELECT
+                    nd.user_id as wp_user_id,
+                    nd.node_id,
+                    nd.node_type,
+                    nd.due_date,
+                    u.display_name,
+                    u.user_email,
+                    l.tg_username,
+                    CASE
+                        WHEN nd.due_date < %s THEN 'overdue'
+                        WHEN nd.due_date <= %s THEN 'due_today'
+                        WHEN nd.due_date <= %s THEN 'due_24h'
+                        WHEN nd.due_date <= %s THEN 'due_72h'
+                        ELSE 'future'
+                    END as pending_type
+                FROM {$nodes_table} nd
+                INNER JOIN {$links_table} l ON l.wp_user_id = nd.user_id
+                INNER JOIN {$wpdb->users} u ON u.ID = nd.user_id
+                WHERE nd.due_date <= %s
+                ORDER BY nd.due_date ASC";
+
+        $pending = $wpdb->get_results(
+            $wpdb->prepare($sql, $now, $today_end, $in_24h, $in_72h, $in_72h),
+            ARRAY_A
+        );
+
+        // Filter out already sent notifications
+        $upcoming = [];
+        foreach ($pending as $row) {
+            if ($row['pending_type'] === 'future') {
+                continue;
+            }
+
+            // Check if this notification was already sent
+            $already_sent = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$notifications_table}
+                 WHERE wp_user_id = %d AND node_id = %s AND notif_type = %s",
+                $row['wp_user_id'],
+                $row['node_id'],
+                $row['pending_type']
+            ));
+
+            if (!$already_sent) {
+                $upcoming[] = $row;
+            }
+        }
+
+        $type_colors = [
+            'overdue'   => '#dc3545',
+            'due_today' => '#fd7e14',
+            'due_24h'   => '#ffc107',
+            'due_72h'   => '#28a745',
+        ];
+
+        $type_labels = [
+            'overdue'   => 'Overdue',
+            'due_today' => 'Due Today',
+            'due_24h'   => 'Due in 24h',
+            'due_72h'   => 'Due in 72h',
+        ];
+
+        echo '<h2>Upcoming Notifications</h2>';
+
+        if (empty($upcoming)) {
+            echo '<p>No pending notifications.</p>';
+        } else {
+            // Group by type for summary
+            $by_type = [];
+            foreach ($upcoming as $row) {
+                $t = $row['pending_type'];
+                if (!isset($by_type[$t])) {
+                    $by_type[$t] = 0;
+                }
+                $by_type[$t]++;
+            }
+
+            echo '<div style="display:flex; gap:12px; margin-bottom:16px;">';
+            foreach ($type_labels as $type => $label) {
+                $count = isset($by_type[$type]) ? $by_type[$type] : 0;
+                $color = $type_colors[$type];
+                echo '<div style="padding:8px 16px; background:' . esc_attr($color) . '; color:#fff; border-radius:4px;">';
+                echo '<strong>' . esc_html($label) . '</strong>: ' . esc_html($count);
+                echo '</div>';
+            }
+            echo '</div>';
+
+            echo '<table class="widefat fixed striped" style="margin-bottom:24px;">';
+            echo '<thead><tr>';
+            echo '<th>User</th>';
+            echo '<th>Email</th>';
+            echo '<th>Telegram</th>';
+            echo '<th>Node</th>';
+            echo '<th>Due Date</th>';
+            echo '<th>Type</th>';
+            echo '</tr></thead><tbody>';
+
+            foreach ($upcoming as $row) {
+                $user_label = $row['display_name'] ? $row['display_name'] : ('User #' . $row['wp_user_id']);
+                $profile_url = admin_url('user-edit.php?user_id=' . (int) $row['wp_user_id']);
+                $tg_display = $row['tg_username'] ? ('@' . $row['tg_username']) : '-';
+                $type_label = isset($type_labels[$row['pending_type']]) ? $type_labels[$row['pending_type']] : $row['pending_type'];
+                $color = isset($type_colors[$row['pending_type']]) ? $type_colors[$row['pending_type']] : '#666';
+                $node_name = $row['node_type'] ? ucfirst($row['node_type']) : '-';
+
+                echo '<tr>';
+                echo '<td><a href="' . esc_url($profile_url) . '">' . esc_html($user_label) . '</a></td>';
+                echo '<td>' . esc_html($row['user_email'] ?: '-') . '</td>';
+                echo '<td>' . esc_html($tg_display) . '</td>';
+                echo '<td>' . esc_html($node_name) . '</td>';
+                echo '<td>' . esc_html($row['due_date']) . '</td>';
+                echo '<td style="background:' . esc_attr($color) . '; color:#fff; font-weight:bold; text-align:center;">' . esc_html($type_label) . '</td>';
+                echo '</tr>';
+            }
+
+            echo '</tbody></table>';
+        }
     }
 }
