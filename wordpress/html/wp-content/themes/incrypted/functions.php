@@ -74,6 +74,32 @@ require get_template_directory() . '/acf-blocks.php';
 require get_template_directory() . '/woo-custom/nodes-functionality.php';
 require get_template_directory() . '/woo-custom/woo-helpers.php';
 
+/**
+ * Translate first-order banner/email strings (EN/UK).
+ */
+function np_t( $string ) {
+    static $uk = [
+        'Your node is being set up'
+            => 'Ваша нода налаштовується',
+        'Your node is being set up — NodesPlus'
+            => 'Ваша нода налаштовується — NodesPlus',
+        'Thank you for your purchase! Your node is now being configured.'
+            => 'Дякуємо за покупку! Ваша нода зараз налаштовується.',
+        'It usually takes up to 30 minutes for the node to appear in your profile, but sometimes it may take longer. Once it does, you will be able to connect Discord in your account settings.'
+            => 'Зазвичай нода з\'являється у вашому профілі протягом 30 хвилин, але іноді це може зайняти більше часу. Після цього ви зможете підключити Discord у налаштуваннях акаунту.',
+        'Please <a href="%s">link your Telegram</a> in your account to receive all updates and notifications.'
+            => 'Будь ласка, <a href="%s">підключіть Telegram</a> у вашому акаунті, щоб отримувати всі оновлення та сповіщення.',
+        'You can check the status in your <a href="%s">account dashboard</a>.'
+            => 'Ви можете перевірити статус у вашій <a href="%s">панелі акаунту</a>.',
+    ];
+
+    $lang = function_exists( 'pll_current_language' ) ? pll_current_language() : 'uk';
+    if ( $lang === 'uk' && isset( $uk[ $string ] ) ) {
+        return $uk[ $string ];
+    }
+    return $string;
+}
+
 add_filter('pll_get_post_types', 'add_cpt_to_pll', 10, 2);
 function add_cpt_to_pll($post_types, $is_settings) {
     if ($is_settings) {
@@ -326,24 +352,24 @@ function incr_send_first_order_email( $order ) {
         return;
     }
 
-    $subject   = __( 'Your node is being set up — NodesPlus', 'incrypted' );
-    $heading   = __( 'Your node is being set up', 'incrypted' );
+    $subject   = np_t( 'Your node is being set up — NodesPlus' );
+    $heading   = np_t( 'Your node is being set up' );
     $nodes_url = site_url( '/my-account/nodes/' );
 
     ob_start();
     wc_get_template( 'emails/email-header.php', [ 'email_heading' => $heading ] );
     ?>
-    <p><?php echo esc_html__( 'Thank you for your purchase! Your node is now being configured.', 'incrypted' ); ?></p>
-    <p><?php echo esc_html__( 'It usually takes up to 30 minutes for the node to appear in your profile, but sometimes it may take longer. Once it does, you will be able to connect Discord in your account settings.', 'incrypted' ); ?></p>
+    <p><?php echo esc_html( np_t( 'Thank you for your purchase! Your node is now being configured.' ) ); ?></p>
+    <p><?php echo esc_html( np_t( 'It usually takes up to 30 minutes for the node to appear in your profile, but sometimes it may take longer. Once it does, you will be able to connect Discord in your account settings.' ) ); ?></p>
     <p><?php
         printf(
-            wp_kses_post( __( 'Please <a href="%s">link your Telegram</a> in your account to receive all updates and notifications.', 'incrypted' ) ),
+            wp_kses_post( np_t( 'Please <a href="%s">link your Telegram</a> in your account to receive all updates and notifications.' ) ),
             esc_url( site_url( '/my-account/' ) )
         );
     ?></p>
     <p><?php
         printf(
-            wp_kses_post( __( 'You can check the status in your <a href="%s">account dashboard</a>.', 'incrypted' ) ),
+            wp_kses_post( np_t( 'You can check the status in your <a href="%s">account dashboard</a>.' ) ),
             esc_url( $nodes_url )
         );
     ?></p>

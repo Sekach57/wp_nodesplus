@@ -48,15 +48,15 @@ defined( 'ABSPATH' ) || exit;
 					<div class="np-first-order-banner__icon">&#9432;</div>
 					<div class="np-first-order-banner__content">
 						<p class="np-first-order-banner__title">
-							<?php esc_html_e( 'Your node is being set up', 'incrypted' ); ?>
+							<?php echo esc_html( np_t( 'Your node is being set up' ) ); ?>
 						</p>
 						<p class="np-first-order-banner__text">
-							<?php esc_html_e( 'It usually takes up to 30 minutes for the node to appear in your profile, but sometimes it may take longer. Once it does, you will be able to connect Discord in your account settings.', 'incrypted' ); ?>
+							<?php echo esc_html( np_t( 'It usually takes up to 30 minutes for the node to appear in your profile, but sometimes it may take longer. Once it does, you will be able to connect Discord in your account settings.' ) ); ?>
 						</p>
 						<p class="np-first-order-banner__text" style="margin-top: 8px;">
 							<?php
 							printf(
-								wp_kses_post( __( 'Please <a href="%s">link your Telegram</a> in your account to receive all updates and notifications.', 'incrypted' ) ),
+								wp_kses_post( np_t( 'Please <a href="%s">link your Telegram</a> in your account to receive all updates and notifications.' ) ),
 								esc_url( site_url( '/my-account/' ) )
 							);
 							?>
