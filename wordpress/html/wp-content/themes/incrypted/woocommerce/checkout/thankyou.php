@@ -43,6 +43,20 @@ defined( 'ABSPATH' ) || exit;
 
 			<?php wc_get_template( 'checkout/order-received.php', array( 'order' => $order ) ); ?>
 
+			<?php if ( function_exists( 'incr_is_first_purchase_order' ) && incr_is_first_purchase_order( $order->get_id() ) ) : ?>
+				<div class="np-first-order-banner">
+					<div class="np-first-order-banner__icon">&#9432;</div>
+					<div class="np-first-order-banner__content">
+						<p class="np-first-order-banner__title">
+							<?php esc_html_e( 'Your node is being set up', 'incrypted' ); ?>
+						</p>
+						<p class="np-first-order-banner__text">
+							<?php esc_html_e( 'It may take a few minutes for the node to appear in your profile. Once it does, you will be able to connect Discord in your account settings.', 'incrypted' ); ?>
+						</p>
+					</div>
+				</div>
+			<?php endif; ?>
+
 			<ul class="woocommerce-order-overview woocommerce-thankyou-order-details order_details">
 
 				<li class="woocommerce-order-overview__order order">

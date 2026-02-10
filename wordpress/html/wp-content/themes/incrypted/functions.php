@@ -313,6 +313,42 @@ function send_user_update($message = '', $context = []) {
 
 }
 
+/**
+ * Send a welcome email to first-time node buyers.
+ */
+function incr_send_first_order_email( $order ) {
+    $to = $order->get_billing_email();
+    if ( ! $to ) {
+        $user = get_userdata( $order->get_user_id() );
+        $to   = $user ? $user->user_email : '';
+    }
+    if ( ! $to ) {
+        return;
+    }
+
+    $subject   = __( 'Your node is being set up — NodesPlus', 'incrypted' );
+    $heading   = __( 'Your node is being set up', 'incrypted' );
+    $nodes_url = site_url( '/my-account/nodes/' );
+
+    ob_start();
+    wc_get_template( 'emails/email-header.php', [ 'email_heading' => $heading ] );
+    ?>
+    <p><?php echo esc_html__( 'Thank you for your purchase! Your node is now being configured.', 'incrypted' ); ?></p>
+    <p><?php echo esc_html__( 'It may take a few minutes for the node to appear in your profile. Once it does, you will be able to connect Discord in your account settings.', 'incrypted' ); ?></p>
+    <p><?php
+        printf(
+            wp_kses_post( __( 'You can check the status in your <a href="%s">account dashboard</a>.', 'incrypted' ) ),
+            esc_url( $nodes_url )
+        );
+    ?></p>
+    <?php
+    wc_get_template( 'emails/email-footer.php' );
+    $message = ob_get_clean();
+
+    $headers = [ 'Content-Type: text/html; charset=UTF-8' ];
+    wp_mail( $to, $subject, $message, $headers );
+}
+
 function write_logs_user_update($message = '', $context = []) {
     $file = 'user_update.log';
     $log_dir = WP_CONTENT_DIR . '/logs';
@@ -372,6 +408,49 @@ add_action( 'user_register', function($user_id) {
 },  10, 2);
 
 
+/**
+ * Check if the given order is the user's very first node purchase.
+ */
+function incr_is_first_purchase_order( $order_id ) {
+    $order = wc_get_order( $order_id );
+    if ( ! $order ) {
+        return false;
+    }
+
+    $user_id = $order->get_user_id();
+    if ( ! $user_id ) {
+        return false;
+    }
+
+    $is_purchase = false;
+    foreach ( $order->get_items() as $item ) {
+        $op_type      = $item->get_meta( 'Operation Type' );
+        $product_name = $item->get_name();
+        if ( $product_name === 'Wallet Topup' ) {
+            continue;
+        }
+        if ( $op_type === 'Prolongation' ) {
+            continue;
+        }
+        $is_purchase = true;
+        break;
+    }
+
+    if ( ! $is_purchase ) {
+        return false;
+    }
+
+    $previous = wc_get_orders( [
+        'customer_id' => $user_id,
+        'status'      => [ 'processing', 'completed' ],
+        'exclude'     => [ $order_id ],
+        'limit'       => 1,
+        'return'      => 'ids',
+    ] );
+
+    return empty( $previous );
+}
+
 add_action( 'woocommerce_order_status_changed', 'check_order_status_update', 10, 3 );
 
 function check_order_status_update( $order_id, $old_status, $new_status ){
@@ -404,6 +483,10 @@ function check_order_status_update( $order_id, $old_status, $new_status ){
                 'discord_id' => $discord ? $discord : null,
                 'user_nodes_expiration_date' => time() + (30 * DAY_IN_SECONDS)
             ]);
+
+            if ( incr_is_first_purchase_order( $order_id ) ) {
+                incr_send_first_order_email( $order );
+            }
         }
     };
 };

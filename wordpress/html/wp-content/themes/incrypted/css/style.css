@@ -1162,6 +1162,33 @@ body > .woocommerce {
     font-size: 28px;
     margin-bottom: 24px; }
 
+.np-first-order-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #EEF4FF;
+  border: 1px solid #B6D0FE;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 16px 0 24px; }
+  .np-first-order-banner__icon {
+    font-size: 22px;
+    color: #3B82F6;
+    flex-shrink: 0;
+    line-height: 1; }
+  .np-first-order-banner__content {
+    flex: 1; }
+  .np-first-order-banner__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1E3A5F;
+    margin: 0 0 4px; }
+  .np-first-order-banner__text {
+    font-size: 14px;
+    color: #4A5568;
+    margin: 0;
+    line-height: 1.5; }
+
 .custom_woocommerce.account_page .woocommerce {
   display: flex;
   justify-content: space-between; }
