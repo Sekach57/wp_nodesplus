@@ -1188,6 +1188,12 @@ body > .woocommerce {
     color: #4A5568;
     margin: 0;
     line-height: 1.5; }
+    .np-first-order-banner__text a {
+      color: #2563EB;
+      text-decoration: underline;
+      font-weight: 500; }
+      .np-first-order-banner__text a:hover {
+        color: #1D4ED8; }
 
 .custom_woocommerce.account_page .woocommerce {
   display: flex;

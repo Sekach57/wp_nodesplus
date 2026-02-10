@@ -1724,6 +1724,16 @@ body > .woocommerce {
     color: #4A5568;
     margin: 0;
     line-height: 1.5;
+
+    a {
+      color: #2563EB;
+      text-decoration: underline;
+      font-weight: 500;
+
+      &:hover {
+        color: #1D4ED8;
+      }
+    }
   }
 }
 
