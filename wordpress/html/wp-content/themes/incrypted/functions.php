@@ -334,7 +334,13 @@ function incr_send_first_order_email( $order ) {
     wc_get_template( 'emails/email-header.php', [ 'email_heading' => $heading ] );
     ?>
     <p><?php echo esc_html__( 'Thank you for your purchase! Your node is now being configured.', 'incrypted' ); ?></p>
-    <p><?php echo esc_html__( 'It may take a few minutes for the node to appear in your profile. Once it does, you will be able to connect Discord in your account settings.', 'incrypted' ); ?></p>
+    <p><?php echo esc_html__( 'It usually takes up to 30 minutes for the node to appear in your profile, but sometimes it may take longer. Once it does, you will be able to connect Discord in your account settings.', 'incrypted' ); ?></p>
+    <p><?php
+        printf(
+            wp_kses_post( __( 'Please <a href="%s">link your Telegram</a> in your account to receive all updates and notifications.', 'incrypted' ) ),
+            esc_url( site_url( '/my-account/' ) )
+        );
+    ?></p>
     <p><?php
         printf(
             wp_kses_post( __( 'You can check the status in your <a href="%s">account dashboard</a>.', 'incrypted' ) ),

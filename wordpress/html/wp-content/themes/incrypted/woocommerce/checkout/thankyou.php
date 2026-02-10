@@ -51,7 +51,15 @@ defined( 'ABSPATH' ) || exit;
 							<?php esc_html_e( 'Your node is being set up', 'incrypted' ); ?>
 						</p>
 						<p class="np-first-order-banner__text">
-							<?php esc_html_e( 'It may take a few minutes for the node to appear in your profile. Once it does, you will be able to connect Discord in your account settings.', 'incrypted' ); ?>
+							<?php esc_html_e( 'It usually takes up to 30 minutes for the node to appear in your profile, but sometimes it may take longer. Once it does, you will be able to connect Discord in your account settings.', 'incrypted' ); ?>
+						</p>
+						<p class="np-first-order-banner__text" style="margin-top: 8px;">
+							<?php
+							printf(
+								wp_kses_post( __( 'Please <a href="%s">link your Telegram</a> in your account to receive all updates and notifications.', 'incrypted' ) ),
+								esc_url( site_url( '/my-account/' ) )
+							);
+							?>
 						</p>
 					</div>
 				</div>
