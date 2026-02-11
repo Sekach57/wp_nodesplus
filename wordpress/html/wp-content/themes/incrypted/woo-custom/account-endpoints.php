@@ -44,7 +44,15 @@ function custom_account_nodes_content() {
         $nodes_to_renew = [];
 
         foreach ($user_nodes as $node){
-            $nodes_to_renew[] = [$node["id"], $node["node_type"], $node["created_at"], $node["due_date"]];
+            $nodes_to_renew[] = [
+                $node["id"],
+                $node["node_type"],
+                $node["created_at"],
+                $node["due_date"],
+                $node["status"] ?? null,
+                $node["price"] ?? null,
+                $node["billing_period"] ?? null,
+            ];
         }
 
         display_nodes_renewal_form($nodes_to_renew, 'nodes-renewal-form');

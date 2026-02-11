@@ -39,7 +39,10 @@ class ProductRenewalSystem
                         'node_name' => $product->get_title(),
                         'unique_key' => $product_id . '_' . $node_id,
                         'created_at'  => $node_data[2],
-                        'due_date'  => $node_data[3]
+                        'due_date'  => $node_data[3],
+                        'api_status' => isset($node_data[4]) ? $node_data[4] : null,
+                        'api_price' => isset($node_data[5]) ? $node_data[5] : null,
+                        'billing_period' => isset($node_data[6]) ? $node_data[6] : null,
                     ];
                 }
             }
@@ -64,6 +67,14 @@ class ProductRenewalSystem
         ?>
         <div id="<?php echo $form_id; ?>" class="nodes-renewal">
             <h3><?= __('Your nodes','incrypted') ?></h3>
+
+            <div class="nodes-tabs">
+                <button type="button" class="nodes-tab is-active" data-filter="all"><?php esc_html_e('All', 'incrypted'); ?></button>
+                <button type="button" class="nodes-tab" data-filter="active"><?php esc_html_e('Active', 'incrypted'); ?></button>
+                <button type="button" class="nodes-tab" data-filter="expiring"><?php esc_html_e('Expiring', 'incrypted'); ?></button>
+                <button type="button" class="nodes-tab" data-filter="expired"><?php esc_html_e('Expired', 'incrypted'); ?></button>
+            </div>
+
             <form id="renewal-form-submit">
                 <div class="nodes-renewal__grid">
                     <?php foreach ($products as $product_data):
@@ -74,15 +85,61 @@ class ProductRenewalSystem
                         $created_at = !empty($product_data['created_at']) ? new DateTime($product_data['created_at']) : null;
                         $due_at = !empty($product_data['due_date']) ? new DateTime($product_data['due_date']) : null;
                         $created_date = $created_at ? $created_at->format('d.m.Y') : '-';
-                        $due_date = $due_at ? $due_at->format('d.m.Y') : '-';
-                        $is_overdue = $due_at ? ($due_at->getTimestamp() < time()) : false;
-                        $status_label = $is_overdue ? __('Overdue', 'incrypted') : __('Active', 'incrypted');
-                        $card_classes = 'node-card' . ($is_overdue ? ' node-card--status-overdue' : '');
+                        $due_date_formatted = $due_at ? $due_at->format('d.m.Y') : '-';
+
+                        // Three-state status computation
+                        $now = time();
+                        if ($due_at) {
+                            $days_left = ($due_at->getTimestamp() - $now) / 86400;
+                            if ($days_left < 0) {
+                                $status_key = 'expired';
+                                $status_label = __('Expired', 'incrypted');
+                                $due_display = __('Expired', 'incrypted');
+                            } elseif ($days_left <= 7) {
+                                $status_key = 'expiring';
+                                $status_label = __('Expiring', 'incrypted');
+                                $days_rounded = max(1, (int) ceil($days_left));
+                                $due_display = sprintf(_n('%d day left', '%d days left', $days_rounded, 'incrypted'), $days_rounded);
+                            } else {
+                                $status_key = 'active';
+                                $status_label = __('Active', 'incrypted');
+                                $days_rounded = (int) ceil($days_left);
+                                $due_display = sprintf(_n('%d day left', '%d days left', $days_rounded, 'incrypted'), $days_rounded);
+                            }
+                        } else {
+                            $status_key = 'active';
+                            $status_label = __('Active', 'incrypted');
+                            $due_display = '-';
+                        }
+
+                        // Progress bar percentage
+                        if ($created_at && $due_at) {
+                            $total_days = max(1, ($due_at->getTimestamp() - $created_at->getTimestamp()) / 86400);
+                            $elapsed_days = ($now - $created_at->getTimestamp()) / 86400;
+                            $progress_pct = max(0, min(100, ($elapsed_days / $total_days) * 100));
+                        } else {
+                            $progress_pct = 0;
+                        }
+
+                        // Product thumbnail
+                        $thumbnail_url = '';
+                        $thumbnail_id = $product->get_image_id();
+                        if ($thumbnail_id) {
+                            $img_src = wp_get_attachment_image_url($thumbnail_id, 'thumbnail');
+                            if ($img_src) {
+                                $thumbnail_url = $img_src;
+                            }
+                        }
+
+                        $card_classes = 'node-card node-card--status-' . $status_key;
                         $help_id = 'node-help-' . preg_replace('/[^a-zA-Z0-9_-]/', '', $unique_key);
                         ?>
-                        <div class="<?php echo esc_attr($card_classes); ?>" data-product-id="<?php echo $product->get_id(); ?>">
+                        <div class="<?php echo esc_attr($card_classes); ?>" data-status="<?php echo esc_attr($status_key); ?>" data-product-id="<?php echo $product->get_id(); ?>">
                             <div class="node-card__header">
                                 <div class="node-card__title">
+                                    <?php if ($thumbnail_url): ?>
+                                        <img class="node-card__image" src="<?php echo esc_url($thumbnail_url); ?>" alt="<?php echo esc_attr($node_name); ?>"/>
+                                    <?php endif; ?>
                                     <span class="node-card__project"><?php echo esc_html($node_name); ?></span>
                                     <button type="button" class="node-card__help" aria-expanded="false" aria-controls="<?php echo esc_attr($help_id); ?>">?</button>
                                     <span id="<?php echo esc_attr($help_id); ?>" class="node-card__help-text" hidden><?php esc_html_e('Node ID', 'incrypted'); ?>: <?php echo esc_html($node_id); ?></span>
@@ -102,8 +159,11 @@ class ProductRenewalSystem
                                 </div>
                                 <div class="node-card__due-block">
                                     <span class="node-card__label"><?php esc_html_e('Due date', 'incrypted'); ?></span>
-                                    <span class="node-card__due"><?php echo esc_html($due_date); ?></span>
+                                    <span class="node-card__due"><?php echo esc_html($due_display); ?></span>
                                 </div>
+                            </div>
+                            <div class="node-card__progress">
+                                <div class="node-card__progress-bar" style="width: <?php echo esc_attr(round($progress_pct, 1)); ?>%"></div>
                             </div>
                             <input type="checkbox"
                                    class="node-card__checkbox"
@@ -114,6 +174,9 @@ class ProductRenewalSystem
                         </div>
                     <?php endforeach; ?>
                 </div>
+
+                <p class="nodes-renewal__empty" hidden><?php esc_html_e('No nodes match this filter.', 'incrypted'); ?></p>
+
                 <div class="renewal-actions">
                     <button type="button" id="select-all-renewals"><?= __('Select all','incrypted') ?></button>
                     <button type="button" id="deselect-all-renewals"><?= __('Deselect all','incrypted') ?></button>
