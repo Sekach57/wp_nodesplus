@@ -74,8 +74,20 @@ class ProductRenewalSystem
                         $created_at = !empty($product_data['created_at']) ? new DateTime($product_data['created_at']) : null;
                         $due_at = !empty($product_data['due_date']) ? new DateTime($product_data['due_date']) : null;
                         $created_date = $created_at ? $created_at->format('d.m.Y') : '-';
-                        $due_date = $due_at ? $due_at->format('d.m.Y') : '-';
                         $is_overdue = $due_at ? ($due_at->getTimestamp() < time()) : false;
+
+                        // Days left display
+                        if ($due_at) {
+                            $days_left = ($due_at->getTimestamp() - time()) / 86400;
+                            if ($days_left < 0) {
+                                $due_display = __('Expired', 'incrypted');
+                            } else {
+                                $days_rounded = max(1, (int) ceil($days_left));
+                                $due_display = sprintf(_n('%d day left', '%d days left', $days_rounded, 'incrypted'), $days_rounded);
+                            }
+                        } else {
+                            $due_display = '-';
+                        }
                         $status_label = $is_overdue ? __('Overdue', 'incrypted') : __('Active', 'incrypted');
                         $card_classes = 'node-card' . ($is_overdue ? ' node-card--status-overdue' : '');
 
@@ -111,7 +123,7 @@ class ProductRenewalSystem
                                 </div>
                                 <div class="node-card__due-block">
                                     <span class="node-card__label"><?php esc_html_e('Due date', 'incrypted'); ?></span>
-                                    <span class="node-card__due"><?php echo esc_html($due_date); ?></span>
+                                    <span class="node-card__due"><?php echo esc_html($due_display); ?></span>
                                 </div>
                             </div>
                             <div class="node-card__progress">
