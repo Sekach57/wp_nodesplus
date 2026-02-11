@@ -286,30 +286,6 @@ jQuery(document).ready(function($) {
         $('input[name="renewal_products[]"]').prop('checked', false).trigger('change');
     });
 
-    // Status filter tabs
-    $(document).on('click', '.nodes-tab', function(e) {
-        e.preventDefault();
-        var filter = $(this).data('filter');
-
-        // Update active tab
-        $('.nodes-tab').removeClass('is-active');
-        $(this).addClass('is-active');
-
-        // Filter cards
-        var $cards = $('.nodes-renewal .node-card');
-        var $empty = $('.nodes-renewal__empty');
-
-        if (filter === 'all') {
-            $cards.show();
-        } else {
-            $cards.hide().filter('[data-status="' + filter + '"]').show();
-        }
-
-        // Show/hide empty state
-        var visibleCount = $cards.filter(':visible').length;
-        $empty.prop('hidden', visibleCount > 0);
-    });
-
     // Handle form submission
     $('#renewal-form-submit').on('submit', function(e) {
         e.preventDefault();
