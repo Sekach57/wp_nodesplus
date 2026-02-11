@@ -21,16 +21,24 @@ class INCR_Nodes_Admin {
 
     public static function add_menu() {
         add_menu_page(
-            'Nodes Dashboard',
+            'NodesPlus Overview',
             'NodesPlus',
             'manage_options',
-            'incr-nodes-dashboard',
-            [__CLASS__, 'render_dashboard'],
+            'incr-nodes-overview',
+            [__CLASS__, 'render_overview'],
             'dashicons-networking',
             56
         );
         add_submenu_page(
-            'incr-nodes-dashboard',
+            'incr-nodes-overview',
+            'Overview',
+            'Overview',
+            'manage_options',
+            'incr-nodes-overview',
+            [__CLASS__, 'render_overview']
+        );
+        add_submenu_page(
+            'incr-nodes-overview',
             'Nodes Dashboard',
             'Nodes Dashboard',
             'manage_options',
@@ -38,7 +46,7 @@ class INCR_Nodes_Admin {
             [__CLASS__, 'render_dashboard']
         );
         add_submenu_page(
-            'incr-nodes-dashboard',
+            'incr-nodes-overview',
             'Telegram Links',
             'Telegram Links',
             'manage_options',
@@ -46,7 +54,7 @@ class INCR_Nodes_Admin {
             [__CLASS__, 'render_telegram_links']
         );
         add_submenu_page(
-            'incr-nodes-dashboard',
+            'incr-nodes-overview',
             'TG Notifications',
             'TG Notifications',
             'manage_options',
@@ -54,7 +62,7 @@ class INCR_Nodes_Admin {
             [__CLASS__, 'render_telegram_notifications']
         );
         add_submenu_page(
-            'incr-nodes-dashboard',
+            'incr-nodes-overview',
             'Send TG Message',
             'Send TG Message',
             'manage_options',
@@ -210,6 +218,508 @@ class INCR_Nodes_Admin {
             'source' => 'Source',
             'actions' => 'Actions',
         ];
+    }
+
+    /* â”€â”€â”€ Overview page â”€â”€â”€ */
+
+    public static function render_overview() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
+        }
+
+        self::render_overview_styles();
+
+        echo '<div class="wrap incr-overview">';
+        echo '<h1>NodesPlus Overview</h1>';
+
+        // A. Summary cards
+        self::render_overview_summary();
+
+        // B. Revenue (current month)
+        self::render_overview_revenue();
+
+        // C + D. Two-column: Expiring Soon + Recent Orders
+        echo '<div class="incr-ov-columns">';
+        self::render_overview_expiring();
+        self::render_overview_recent_orders();
+        echo '</div>';
+
+        // E. User lookup
+        self::render_overview_user_lookup();
+
+        echo '</div>';
+    }
+
+    private static function render_overview_styles() {
+        ?>
+        <style>
+        .incr-overview { max-width: 1400px; }
+        .incr-ov-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .incr-ov-card {
+            background: #fff;
+            border: 1px solid #c3c4c7;
+            border-left: 4px solid #2271b1;
+            padding: 16px 20px;
+            border-radius: 0 4px 4px 0;
+        }
+        .incr-ov-card .incr-ov-card__icon {
+            font-size: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .incr-ov-card .incr-ov-card__label {
+            font-size: 13px;
+            color: #50575e;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .incr-ov-card .incr-ov-card__value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1d2327;
+        }
+        .incr-ov-card--green  { border-left-color: #00a32a; }
+        .incr-ov-card--yellow { border-left-color: #dba617; }
+        .incr-ov-card--red    { border-left-color: #d63638; }
+        .incr-ov-card--gray   { border-left-color: #787c82; }
+
+        .incr-ov-revenue {
+            background: #fff;
+            border: 1px solid #c3c4c7;
+            padding: 16px 20px;
+            margin: 0 0 20px;
+        }
+        .incr-ov-revenue h2 { margin-top: 0; }
+        .incr-ov-revenue-numbers {
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+        .incr-ov-revenue-numbers .incr-ov-rev-item span {
+            display: block;
+            font-size: 13px;
+            color: #50575e;
+        }
+        .incr-ov-revenue-numbers .incr-ov-rev-item strong {
+            font-size: 22px;
+        }
+
+        .incr-ov-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 1200px) {
+            .incr-ov-columns { grid-template-columns: 1fr; }
+        }
+
+        .incr-ov-lookup {
+            background: #fff;
+            border: 1px solid #c3c4c7;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+        .incr-ov-lookup h2 { margin-top: 0; }
+        .incr-ov-lookup-form {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            margin-bottom: 16px;
+        }
+        .incr-ov-node-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 12px;
+        }
+        .incr-ov-node-card {
+            background: #f6f7f7;
+            border: 1px solid #c3c4c7;
+            border-radius: 4px;
+            padding: 12px 16px;
+        }
+        .incr-ov-node-card__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .incr-ov-node-card__type {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .incr-ov-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .incr-ov-badge--active  { background: #00a32a; }
+        .incr-ov-badge--overdue { background: #d63638; }
+        .incr-ov-node-card__meta {
+            font-size: 12px;
+            color: #50575e;
+            margin-bottom: 8px;
+        }
+        .incr-ov-progress-wrap {
+            background: #dcdcde;
+            border-radius: 3px;
+            height: 6px;
+            overflow: hidden;
+        }
+        .incr-ov-progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            background: #00a32a;
+            transition: width .3s;
+        }
+        .incr-ov-progress-bar--overdue { background: #d63638; }
+        </style>
+        <?php
+    }
+
+    private static function render_overview_summary() {
+        $status_counts = class_exists('INCR_Nodes_Store') ? INCR_Nodes_Store::get_status_counts() : ['active' => 0, 'overdue' => 0];
+        $expiring = class_exists('INCR_Nodes_Store') ? INCR_Nodes_Store::get_expiring_count(7) : 0;
+        $users = class_exists('INCR_Nodes_Store') ? INCR_Nodes_Store::get_distinct_user_count() : 0;
+        $total = $status_counts['active'] + $status_counts['overdue'];
+
+        $dashboard_url = admin_url('admin.php?page=incr-nodes-dashboard');
+
+        echo '<div class="incr-ov-cards">';
+
+        // Total Nodes
+        echo '<div class="incr-ov-card">';
+        echo '<span class="incr-ov-card__label"><span class="dashicons dashicons-networking incr-ov-card__icon"></span>Total Nodes</span>';
+        echo '<span class="incr-ov-card__value">' . esc_html($total) . '</span>';
+        echo '</div>';
+
+        // Active
+        echo '<a href="' . esc_url(add_query_arg('status', 'active', $dashboard_url)) . '" class="incr-ov-card incr-ov-card--green" style="text-decoration:none;">';
+        echo '<span class="incr-ov-card__label"><span class="dashicons dashicons-yes-alt incr-ov-card__icon"></span>Active</span>';
+        echo '<span class="incr-ov-card__value">' . esc_html($status_counts['active']) . '</span>';
+        echo '</a>';
+
+        // Expiring Soon
+        $expiring_url = add_query_arg([
+            'status' => 'active',
+            'due_from' => current_time('Y-m-d'),
+            'due_to' => date('Y-m-d', strtotime('+7 days', strtotime(current_time('Y-m-d')))),
+        ], $dashboard_url);
+        echo '<a href="' . esc_url($expiring_url) . '" class="incr-ov-card incr-ov-card--yellow" style="text-decoration:none;">';
+        echo '<span class="incr-ov-card__label"><span class="dashicons dashicons-warning incr-ov-card__icon"></span>Expiring Soon</span>';
+        echo '<span class="incr-ov-card__value">' . esc_html($expiring) . '</span>';
+        echo '</a>';
+
+        // Expired
+        echo '<a href="' . esc_url(add_query_arg('status', 'overdue', $dashboard_url)) . '" class="incr-ov-card incr-ov-card--red" style="text-decoration:none;">';
+        echo '<span class="incr-ov-card__label"><span class="dashicons dashicons-dismiss incr-ov-card__icon"></span>Expired</span>';
+        echo '<span class="incr-ov-card__value">' . esc_html($status_counts['overdue']) . '</span>';
+        echo '</a>';
+
+        // Users with Nodes
+        echo '<div class="incr-ov-card incr-ov-card--gray">';
+        echo '<span class="incr-ov-card__label"><span class="dashicons dashicons-groups incr-ov-card__icon"></span>Users with Nodes</span>';
+        echo '<span class="incr-ov-card__value">' . esc_html($users) . '</span>';
+        echo '</div>';
+
+        echo '</div>';
+    }
+
+    private static function render_overview_revenue() {
+        echo '<div class="incr-ov-revenue postbox">';
+        echo '<h2>Revenue (Current Month)</h2>';
+
+        if (!function_exists('wc_get_orders')) {
+            echo '<p>WooCommerce not available. No revenue data.</p>';
+            echo '</div>';
+            return;
+        }
+
+        $month_start = date('Y-m-01');
+        $month_end = date('Y-m-t');
+
+        $orders = wc_get_orders([
+            'status' => ['wc-completed', 'wc-processing'],
+            'date_created' => $month_start . '...' . $month_end,
+            'limit' => -1,
+        ]);
+
+        $total_revenue = 0;
+        $purchase_revenue = 0;
+        $renewal_revenue = 0;
+
+        foreach ($orders as $order) {
+            foreach ($order->get_items() as $item) {
+                $product_name = $item->get_name();
+                if (stripos($product_name, 'Wallet Topup') !== false) {
+                    continue;
+                }
+
+                $line_total = (float) $item->get_total();
+                $total_revenue += $line_total;
+
+                $op_type = $item->get_meta('Operation Type');
+                if ($op_type === 'Prolongation') {
+                    $renewal_revenue += $line_total;
+                } else {
+                    $purchase_revenue += $line_total;
+                }
+            }
+        }
+
+        echo '<div class="incr-ov-revenue-numbers">';
+        echo '<div class="incr-ov-rev-item"><span>Total</span><strong>' . wp_kses_post(wc_price($total_revenue)) . '</strong></div>';
+        echo '<div class="incr-ov-rev-item"><span>Purchases</span><strong>' . wp_kses_post(wc_price($purchase_revenue)) . '</strong></div>';
+        echo '<div class="incr-ov-rev-item"><span>Renewals</span><strong>' . wp_kses_post(wc_price($renewal_revenue)) . '</strong></div>';
+        echo '</div>';
+
+        echo '</div>';
+    }
+
+    private static function render_overview_expiring() {
+        echo '<div class="postbox" style="padding: 12px 20px;">';
+        echo '<h2 style="margin-top:0;">Expiring Soon (7 days)</h2>';
+
+        if (!class_exists('INCR_Nodes_Store')) {
+            echo '<p>No data.</p></div>';
+            return;
+        }
+
+        $today = current_time('Y-m-d');
+        $in_7_days = date('Y-m-d', strtotime('+7 days', strtotime($today)));
+
+        $result = INCR_Nodes_Store::get_all_nodes([
+            'status' => 'active',
+            'due_date_from' => $today,
+            'due_date_to' => $in_7_days,
+            'orderby' => 'due_date',
+            'order' => 'ASC',
+            'per_page' => 10,
+            'page' => 1,
+        ]);
+
+        $items = $result['items'];
+
+        if (empty($items)) {
+            echo '<p>No nodes expiring in the next 7 days.</p></div>';
+            return;
+        }
+
+        $user_cache = [];
+        echo '<table class="widefat striped" style="border:0;">';
+        echo '<thead><tr><th>User</th><th>Email</th><th>Node Type</th><th>Node ID</th><th>Due Date</th><th>Days Left</th></tr></thead><tbody>';
+
+        foreach ($items as $row) {
+            $uid = (int) $row['user_id'];
+            if (!isset($user_cache[$uid])) {
+                $user_cache[$uid] = get_user_by('id', $uid);
+            }
+            $user = $user_cache[$uid];
+            $display_name = $user ? $user->display_name : 'User #' . $uid;
+            $email = $user ? $user->user_email : '-';
+
+            $due = $row['due_date'] ? substr($row['due_date'], 0, 10) : '-';
+            $days_left = $row['due_date'] ? max(0, (int) ((strtotime($row['due_date']) - strtotime($today)) / 86400)) : '-';
+
+            echo '<tr>';
+            echo '<td>' . esc_html($display_name) . '</td>';
+            echo '<td>' . esc_html($email) . '</td>';
+            echo '<td>' . esc_html($row['node_type']) . '</td>';
+            echo '<td style="font-size:11px;">' . esc_html($row['node_id']) . '</td>';
+            echo '<td>' . esc_html($due) . '</td>';
+            echo '<td>' . esc_html($days_left) . '</td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+
+        if ($result['total'] > 10) {
+            $url = add_query_arg([
+                'page' => 'incr-nodes-dashboard',
+                'status' => 'active',
+                'due_from' => $today,
+                'due_to' => $in_7_days,
+            ], admin_url('admin.php'));
+            echo '<p style="margin-bottom:0;"><a href="' . esc_url($url) . '">View all ' . esc_html($result['total']) . ' in Nodes Dashboard &rarr;</a></p>';
+        }
+
+        echo '</div>';
+    }
+
+    private static function render_overview_recent_orders() {
+        echo '<div class="postbox" style="padding: 12px 20px;">';
+        echo '<h2 style="margin-top:0;">Recent Node Orders</h2>';
+
+        if (!function_exists('wc_get_orders')) {
+            echo '<p>WooCommerce not available.</p></div>';
+            return;
+        }
+
+        $orders = wc_get_orders([
+            'status' => ['wc-completed', 'wc-processing'],
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'limit' => 20,
+        ]);
+
+        $rows = [];
+        foreach ($orders as $order) {
+            foreach ($order->get_items() as $item) {
+                $product_name = $item->get_name();
+                if (stripos($product_name, 'Wallet Topup') !== false) {
+                    continue;
+                }
+
+                $op_type = $item->get_meta('Operation Type');
+                $type_label = ($op_type === 'Prolongation') ? 'Renewal' : 'Purchase';
+
+                $rows[] = [
+                    'date' => $order->get_date_created() ? $order->get_date_created()->date('Y-m-d H:i') : '-',
+                    'user' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+                    'product' => $product_name,
+                    'type' => $type_label,
+                    'total' => $item->get_total(),
+                ];
+
+                if (count($rows) >= 5) {
+                    break 2;
+                }
+            }
+        }
+
+        if (empty($rows)) {
+            echo '<p>No recent node orders.</p></div>';
+            return;
+        }
+
+        echo '<table class="widefat striped" style="border:0;">';
+        echo '<thead><tr><th>Date</th><th>User</th><th>Product</th><th>Type</th><th>Total</th></tr></thead><tbody>';
+
+        foreach ($rows as $r) {
+            echo '<tr>';
+            echo '<td>' . esc_html($r['date']) . '</td>';
+            echo '<td>' . esc_html($r['user']) . '</td>';
+            echo '<td>' . esc_html($r['product']) . '</td>';
+            echo '<td>' . esc_html($r['type']) . '</td>';
+            echo '<td>' . wp_kses_post(wc_price($r['total'])) . '</td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+        echo '</div>';
+    }
+
+    private static function render_overview_user_lookup() {
+        echo '<div class="incr-ov-lookup">';
+        echo '<h2>User Lookup</h2>';
+
+        $lookup = isset($_GET['lookup']) ? sanitize_text_field(wp_unslash($_GET['lookup'])) : '';
+
+        echo '<form method="get" class="incr-ov-lookup-form">';
+        echo '<input type="hidden" name="page" value="incr-nodes-overview" />';
+        echo '<label>User ID or Email<br><input type="text" name="lookup" value="' . esc_attr($lookup) . '" placeholder="e.g. 42 or user@example.com" style="width:280px;"></label>';
+        echo '<button class="button button-primary">Look up</button>';
+        echo '</form>';
+
+        if ($lookup !== '') {
+            $user = null;
+            if (is_numeric($lookup)) {
+                $user = get_user_by('id', (int) $lookup);
+            }
+            if (!$user) {
+                $user = get_user_by('email', $lookup);
+            }
+
+            if (!$user) {
+                echo '<div class="notice notice-warning" style="margin:0;"><p>User not found for: <strong>' . esc_html($lookup) . '</strong></p></div>';
+                echo '</div>';
+                return;
+            }
+
+            echo '<div style="margin-bottom:12px;">';
+            echo '<strong>' . esc_html($user->display_name) . '</strong> ';
+            echo '(' . esc_html($user->user_email) . ') ';
+            echo '&mdash; ID: ' . esc_html($user->ID);
+            $profile_url = admin_url('user-edit.php?user_id=' . $user->ID);
+            echo ' <a href="' . esc_url($profile_url) . '">Edit profile</a>';
+            echo '</div>';
+
+            if (!class_exists('INCR_Nodes_Store')) {
+                echo '<p>Nodes store not available.</p></div>';
+                return;
+            }
+
+            $nodes = INCR_Nodes_Store::get_nodes_by_user($user->ID);
+
+            if (empty($nodes)) {
+                echo '<p>No nodes found for this user.</p>';
+                $dashboard_url = add_query_arg(['page' => 'incr-nodes-dashboard', 'user_id' => $user->ID], admin_url('admin.php'));
+                echo '<a href="' . esc_url($dashboard_url) . '">View in Nodes Dashboard &rarr;</a>';
+                echo '</div>';
+                return;
+            }
+
+            $today = current_time('Y-m-d');
+
+            echo '<div class="incr-ov-node-cards">';
+            foreach ($nodes as $node) {
+                $due = $node['due_date'] ? substr($node['due_date'], 0, 10) : null;
+                $is_overdue = $due && $due < $today;
+                $status_label = $due ? ($is_overdue ? 'Overdue' : 'Active') : 'Unknown';
+                $badge_class = $is_overdue ? 'incr-ov-badge--overdue' : 'incr-ov-badge--active';
+
+                // Progress bar
+                $progress_pct = 0;
+                if ($node['created_at'] && $node['due_date']) {
+                    $created_ts = strtotime($node['created_at']);
+                    $due_ts = strtotime($node['due_date']);
+                    $now_ts = time();
+                    $total_days = max(1, ($due_ts - $created_ts) / 86400);
+                    $elapsed_days = ($now_ts - $created_ts) / 86400;
+                    $progress_pct = max(0, min(100, ($elapsed_days / $total_days) * 100));
+                }
+
+                $days_left = $due ? (int) ((strtotime($due) - strtotime($today)) / 86400) : null;
+                $created_display = $node['created_at'] ? substr($node['created_at'], 0, 10) : '-';
+
+                echo '<div class="incr-ov-node-card">';
+                echo '<div class="incr-ov-node-card__header">';
+                echo '<span class="incr-ov-node-card__type">' . esc_html($node['node_type'] ?: 'Unknown') . '</span>';
+                echo '<span class="incr-ov-badge ' . esc_attr($badge_class) . '">' . esc_html($status_label) . '</span>';
+                echo '</div>';
+                echo '<div class="incr-ov-node-card__meta">';
+                echo 'Created: ' . esc_html($created_display) . '<br>';
+                echo 'Due: ' . esc_html($due ?: '-');
+                if ($days_left !== null) {
+                    if ($days_left > 0) {
+                        echo ' (' . esc_html($days_left) . 'd left)';
+                    } elseif ($days_left === 0) {
+                        echo ' (today)';
+                    } else {
+                        echo ' (' . esc_html(abs($days_left)) . 'd overdue)';
+                    }
+                }
+                echo '</div>';
+                echo '<div class="incr-ov-progress-wrap">';
+                echo '<div class="incr-ov-progress-bar' . ($is_overdue ? ' incr-ov-progress-bar--overdue' : '') . '" style="width:' . esc_attr(round($progress_pct, 1)) . '%"></div>';
+                echo '</div>';
+                echo '</div>';
+            }
+            echo '</div>';
+
+            $dashboard_url = add_query_arg(['page' => 'incr-nodes-dashboard', 'user_id' => $user->ID], admin_url('admin.php'));
+            echo '<p><a href="' . esc_url($dashboard_url) . '">View in Nodes Dashboard &rarr;</a></p>';
+        }
+
+        echo '</div>';
     }
 
     public static function render_dashboard() {
@@ -451,7 +961,7 @@ class INCR_Nodes_Admin {
                             $filter_url = add_query_arg(['page' => 'incr-nodes-dashboard', 'node_type' => $value], admin_url('admin.php'));
                             echo '<td><a href="' . esc_url($filter_url) . '">' . esc_html($value) . '</a></td>';
                         } else {
-                            echo '<td>—</td>';
+                            echo '<td>ï¿½</td>';
                         }
                     } elseif ($key === 'actions') {
                         echo '<td><a href="#" class="incr-view-raw" data-target="' . esc_attr($raw_id) . '">View raw</a></td>';
@@ -699,8 +1209,8 @@ class INCR_Nodes_Admin {
             $page_links = paginate_links([
                 'base' => $base,
                 'format' => '',
-                'prev_text' => '«',
-                'next_text' => '»',
+                'prev_text' => 'ï¿½',
+                'next_text' => 'ï¿½',
                 'total' => $total_pages,
                 'current' => $page,
             ]);
@@ -891,7 +1401,7 @@ class INCR_Nodes_Admin {
         // User selector
         echo '<tr><th><label for="tg_user_id">Select User</label></th><td>';
         echo '<select name="tg_user_id" id="tg_user_id" style="width:100%;" required>';
-        echo '<option value="">— Select user —</option>';
+        echo '<option value="">ï¿½ Select user ï¿½</option>';
         foreach ($tg_users as $user) {
             $label = $user['display_name'] ?: 'User #' . $user['wp_user_id'];
             $label .= ' (' . $user['user_email'] . ')';

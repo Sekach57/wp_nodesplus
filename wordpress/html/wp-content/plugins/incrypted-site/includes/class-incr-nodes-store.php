@@ -381,6 +381,26 @@ class INCR_Nodes_Store {
         return $wpdb->get_results($wpdb->prepare($sql, $params), ARRAY_A);
     }
 
+    public static function get_expiring_count($days = 7) {
+        global $wpdb;
+        $table = self::table_name();
+        $today = current_time('Y-m-d');
+        $end = date('Y-m-d', strtotime("+{$days} days", strtotime($today)));
+
+        return (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} WHERE due_date IS NOT NULL AND DATE(due_date) >= %s AND DATE(due_date) <= %s",
+            $today,
+            $end
+        ));
+    }
+
+    public static function get_distinct_user_count() {
+        global $wpdb;
+        $table = self::table_name();
+
+        return (int) $wpdb->get_var("SELECT COUNT(DISTINCT user_id) FROM {$table}");
+    }
+
     public static function get_distinct_node_types() {
         global $wpdb;
         $table = self::table_name();
