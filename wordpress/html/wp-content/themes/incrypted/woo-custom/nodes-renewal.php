@@ -78,6 +78,15 @@ class ProductRenewalSystem
                         $is_overdue = $due_at ? ($due_at->getTimestamp() < time()) : false;
                         $status_label = $is_overdue ? __('Overdue', 'incrypted') : __('Active', 'incrypted');
                         $card_classes = 'node-card' . ($is_overdue ? ' node-card--status-overdue' : '');
+
+                        // Progress bar percentage
+                        if ($created_at && $due_at) {
+                            $total_days = max(1, ($due_at->getTimestamp() - $created_at->getTimestamp()) / 86400);
+                            $elapsed_days = (time() - $created_at->getTimestamp()) / 86400;
+                            $progress_pct = max(0, min(100, ($elapsed_days / $total_days) * 100));
+                        } else {
+                            $progress_pct = 0;
+                        }
                         $help_id = 'node-help-' . preg_replace('/[^a-zA-Z0-9_-]/', '', $unique_key);
                         ?>
                         <div class="<?php echo esc_attr($card_classes); ?>" data-product-id="<?php echo $product->get_id(); ?>">
@@ -104,6 +113,9 @@ class ProductRenewalSystem
                                     <span class="node-card__label"><?php esc_html_e('Due date', 'incrypted'); ?></span>
                                     <span class="node-card__due"><?php echo esc_html($due_date); ?></span>
                                 </div>
+                            </div>
+                            <div class="node-card__progress">
+                                <div class="node-card__progress-bar<?php echo $is_overdue ? ' node-card__progress-bar--overdue' : ''; ?>" style="width: <?php echo esc_attr(round($progress_pct, 1)); ?>%"></div>
                             </div>
                             <input type="checkbox"
                                    class="node-card__checkbox"

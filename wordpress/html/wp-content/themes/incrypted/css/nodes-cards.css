@@ -275,6 +275,25 @@
     outline-offset: 2px;
 }
 
+/* Progress bar */
+.node-card__progress {
+    height: 4px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.node-card__progress-bar {
+    height: 100%;
+    border-radius: 999px;
+    background: #22c55e;
+    transition: width 0.3s ease;
+}
+
+.node-card__progress-bar--overdue {
+    background: #ef4444;
+}
+
 .np-modal {
     position: fixed;
     inset: 0;
