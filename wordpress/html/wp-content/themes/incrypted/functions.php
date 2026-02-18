@@ -54,6 +54,7 @@ function incrypted_scripts() {
         'ajax_url' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('custom_cart_nonce'),
         'renewal_nonce' => wp_create_nonce('renewal_nonce'),
+        'promo_nonce' => wp_create_nonce('promo_code_nonce'),
         'checkout_url' => wc_get_checkout_url(),
         'cart_url' => wc_get_cart_url()
     ]);

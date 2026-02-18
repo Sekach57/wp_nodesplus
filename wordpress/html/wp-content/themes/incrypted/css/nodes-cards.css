@@ -1117,3 +1117,45 @@ body.np-modal-open {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Promo code ─────────────────────────────────────────── */
+.np-promo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.np-promo__input {
+    background: transparent;
+    border: 1px solid #43464B;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    padding: 8px 14px;
+    outline: none;
+    width: 200px;
+    font-family: "Onest", sans-serif;
+}
+
+.np-promo__input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.np-promo__input:focus {
+    border-color: #666;
+}
+
+.np-promo__input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.np-promo__msg {
+    font-size: 13px;
+    flex-basis: 100%;
+}
+
+.np-promo__msg--ok  { color: #46b450; }
+.np-promo__msg--err { color: #e2401c; }

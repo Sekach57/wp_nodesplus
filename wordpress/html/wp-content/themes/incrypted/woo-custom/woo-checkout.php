@@ -381,3 +381,34 @@ function add_text_to_lost_password_footer() {
     }
 }
 add_action( 'wp_footer', 'add_text_to_lost_password_footer' );
+
+
+// Promo code
+add_action('wp_ajax_apply_promo_code', 'handle_apply_promo_code');
+add_action('wp_ajax_nopriv_apply_promo_code', 'handle_apply_promo_code');
+
+function handle_apply_promo_code() {
+    check_ajax_referer('promo_code_nonce', 'nonce');
+
+    $code = sanitize_text_field(wp_unslash($_POST['promo_code'] ?? ''));
+
+    if (empty($code)) {
+        wp_send_json_error(['message' => __('Please enter a promo code', 'incrypted')]);
+    }
+
+    if (WC()->cart->has_discount($code)) {
+        wp_send_json_error(['message' => __('Promo code already applied', 'incrypted')]);
+    }
+
+    $result = WC()->cart->apply_coupon($code);
+
+    if ($result) {
+        $discount = WC()->cart->get_coupon_discount_amount($code);
+        wp_send_json_success([
+            'message' => __('Promo code applied!', 'incrypted'),
+            'discount' => wc_price($discount),
+        ]);
+    } else {
+        wp_send_json_error(['message' => __('Invalid promo code', 'incrypted')]);
+    }
+}

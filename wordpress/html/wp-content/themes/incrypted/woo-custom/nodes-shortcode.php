@@ -181,6 +181,12 @@ function display_custom_nodes($atts) {
                         </div>
                     </div>
                 </div>
+            <!-- Promo code -->
+            <div class="np-promo" id="np-promo-purchase">
+                <input type="text" class="np-promo__input" placeholder="<?php esc_attr_e('Promo code', 'incrypted'); ?>" autocomplete="off" />
+                <button type="button" class="np-promo__btn btn_2"><?php esc_html_e('Apply', 'incrypted'); ?></button>
+                <span class="np-promo__msg" aria-live="polite"></span>
+            </div>
             <a href="<?php echo wc_get_checkout_url(); ?>" class="btn start_order" id="checkout-btn"><?= $nodes["start_order_button_text"] ?></a>
         </div>
     </section>

@@ -144,6 +144,12 @@ class ProductRenewalSystem
                     <button type="submit" id="add-renewals-to-cart" class="button-primary">
                         <?= __('Add for prolongation','incrypted') ?>
                     </button>
+                    <!-- Promo code -->
+                    <div class="np-promo" id="np-promo-renewal">
+                        <input type="text" class="np-promo__input" placeholder="<?php esc_attr_e('Promo code', 'incrypted'); ?>" autocomplete="off" />
+                        <button type="button" class="np-promo__btn btn_2"><?php esc_html_e('Apply', 'incrypted'); ?></button>
+                        <span class="np-promo__msg" aria-live="polite"></span>
+                    </div>
                 </div>
             </form>
         </div>
