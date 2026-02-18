@@ -134,6 +134,17 @@ add_filter('woocommerce_cart_item_quantity', function($product_quantity, $cart_i
     return $product_quantity;
 }, 10, 3);
 
+// Clear applied coupons when the user logs out
+add_action('wp_logout', function( $user_id ) {
+    if ( function_exists('WC') && WC()->cart ) {
+        WC()->cart->remove_coupons();
+        WC()->cart->calculate_totals();
+    }
+    // Also clear from the persistent cart stored in user meta
+    $blog_id = get_current_blog_id();
+    delete_user_meta( $user_id, '_woocommerce_persistent_cart_' . $blog_id );
+});
+
 add_action('woocommerce_cart_loaded_from_session', function() {
 
     foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
