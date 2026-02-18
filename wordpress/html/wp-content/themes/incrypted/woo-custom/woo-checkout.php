@@ -407,11 +407,15 @@ add_action('wp_ajax_apply_promo_code', 'handle_apply_promo_code');
 add_action('wp_ajax_nopriv_apply_promo_code', 'handle_apply_promo_code');
 
 function handle_apply_promo_code() {
+    error_log('[promo] handler called, POST=' . json_encode($_POST));
+
     if ( ! check_ajax_referer('promo_code_nonce', 'nonce', false) ) {
+        error_log('[promo] nonce failed');
         wp_send_json_error(['message' => 'Помилка безпеки. Оновіть сторінку.']);
     }
 
     $code = sanitize_text_field(wp_unslash($_POST['promo_code'] ?? ''));
+    error_log('[promo] code=' . $code);
 
     if ( empty($code) ) {
         wp_send_json_error(['message' => 'Введіть промокод']);
