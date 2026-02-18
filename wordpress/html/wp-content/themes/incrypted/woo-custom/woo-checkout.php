@@ -387,10 +387,10 @@ add_action( 'wp_footer', 'add_text_to_lost_password_footer' );
 add_action('woocommerce_proceed_to_checkout', function() {
     ?>
     <div class="np-promo" id="np-promo-cart">
-        <span class="np-promo__label"><?php esc_html_e('Промокод', 'incrypted'); ?></span>
-        <div class="np-promo__row">
+        <div class="np-promo__field">
+            <span class="np-promo__label"><?php esc_html_e('Промокод', 'incrypted'); ?></span>
             <input type="text" class="np-promo__input" placeholder="<?php esc_attr_e('Введіть код', 'incrypted'); ?>" autocomplete="off" />
-            <button type="button" class="np-promo__btn btn_2"><?php esc_html_e('Застосувати', 'incrypted'); ?></button>
+            <button type="button" class="np-promo__btn"><?php esc_html_e('Застосувати', 'incrypted'); ?></button>
         </div>
         <span class="np-promo__msg" aria-live="polite"></span>
     </div>
@@ -407,27 +407,34 @@ add_action('wp_ajax_apply_promo_code', 'handle_apply_promo_code');
 add_action('wp_ajax_nopriv_apply_promo_code', 'handle_apply_promo_code');
 
 function handle_apply_promo_code() {
-    check_ajax_referer('promo_code_nonce', 'nonce');
+    if ( ! check_ajax_referer('promo_code_nonce', 'nonce', false) ) {
+        wp_send_json_error(['message' => 'Помилка безпеки. Оновіть сторінку.']);
+    }
 
     $code = sanitize_text_field(wp_unslash($_POST['promo_code'] ?? ''));
 
-    if (empty($code)) {
-        wp_send_json_error(['message' => __('Please enter a promo code', 'incrypted')]);
+    if ( empty($code) ) {
+        wp_send_json_error(['message' => 'Введіть промокод']);
     }
 
-    if (WC()->cart->has_discount($code)) {
-        wp_send_json_error(['message' => __('Promo code already applied', 'incrypted')]);
+    if ( WC()->session && ! WC()->session->has_session() ) {
+        WC()->session->set_customer_session_cookie(true);
+    }
+
+    if ( WC()->cart->has_discount($code) ) {
+        wp_send_json_error(['message' => 'Промокод вже застосовано']);
     }
 
     $result = WC()->cart->apply_coupon($code);
 
-    if ($result) {
+    if ( $result ) {
+        WC()->cart->calculate_totals();
         $discount = WC()->cart->get_coupon_discount_amount($code);
         wp_send_json_success([
-            'message' => __('Promo code applied!', 'incrypted'),
-            'discount' => wc_price($discount),
+            'message' => 'Промокод застосовано!',
+            'discount' => $discount > 0 ? wc_price($discount) : '',
         ]);
     } else {
-        wp_send_json_error(['message' => __('Invalid promo code', 'incrypted')]);
+        wp_send_json_error(['message' => 'Невірний або недійсний промокод']);
     }
 }
