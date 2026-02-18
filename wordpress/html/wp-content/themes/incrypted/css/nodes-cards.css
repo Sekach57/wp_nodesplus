@@ -1121,26 +1121,42 @@ body.np-modal-open {
 /* ── Promo code ─────────────────────────────────────────── */
 .np-promo {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 12px;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+.np-promo__label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-family: "Onest", sans-serif;
+}
+
+.np-promo__row {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
 }
 
 .np-promo__input {
+    flex: 1;
+    min-width: 0;
+    max-width: 220px;
     background: transparent;
     border: 1px solid #43464B;
     border-radius: 8px;
     color: #fff;
     font-size: 14px;
-    padding: 8px 14px;
+    padding: 0 14px;
     outline: none;
-    width: 200px;
     font-family: "Onest", sans-serif;
+    line-height: 1;
 }
 
 .np-promo__input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
 }
 
 .np-promo__input:focus {
@@ -1152,9 +1168,17 @@ body.np-modal-open {
     cursor: not-allowed;
 }
 
+.np-promo__btn.btn_2 {
+    white-space: nowrap;
+    font-size: 14px;
+    padding: 0 18px;
+    max-height: none;
+    height: auto;
+}
+
 .np-promo__msg {
     font-size: 13px;
-    flex-basis: 100%;
+    min-height: 18px;
 }
 
 .np-promo__msg--ok  { color: #46b450; }

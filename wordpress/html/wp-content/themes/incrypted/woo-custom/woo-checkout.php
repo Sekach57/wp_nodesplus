@@ -387,12 +387,20 @@ add_action( 'wp_footer', 'add_text_to_lost_password_footer' );
 add_action('woocommerce_proceed_to_checkout', function() {
     ?>
     <div class="np-promo" id="np-promo-cart">
-        <input type="text" class="np-promo__input" placeholder="<?php esc_attr_e('Promo code', 'incrypted'); ?>" autocomplete="off" />
-        <button type="button" class="np-promo__btn btn_2"><?php esc_html_e('Apply', 'incrypted'); ?></button>
+        <span class="np-promo__label"><?php esc_html_e('Промокод', 'incrypted'); ?></span>
+        <div class="np-promo__row">
+            <input type="text" class="np-promo__input" placeholder="<?php esc_attr_e('Введіть код', 'incrypted'); ?>" autocomplete="off" />
+            <button type="button" class="np-promo__btn btn_2"><?php esc_html_e('Застосувати', 'incrypted'); ?></button>
+        </div>
         <span class="np-promo__msg" aria-live="polite"></span>
     </div>
     <?php
 }, 5);
+
+// Label for applied promo code in cart totals
+add_filter('woocommerce_cart_totals_coupon_label', function($label, $coupon) {
+    return 'Discount від промокода';
+}, 10, 2);
 
 // Promo code
 add_action('wp_ajax_apply_promo_code', 'handle_apply_promo_code');
