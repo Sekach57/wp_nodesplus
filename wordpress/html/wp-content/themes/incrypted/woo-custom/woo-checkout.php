@@ -134,13 +134,23 @@ add_filter('woocommerce_cart_item_quantity', function($product_quantity, $cart_i
     return $product_quantity;
 }, 10, 3);
 
-// Destroy WC session on logout so promo codes don't persist
-add_action('wp_logout', function( $user_id ) {
-    // Destroy the WC session (clears cart + coupons cookie)
-    if ( function_exists('WC') && WC()->session ) {
-        WC()->session->destroy_session();
+// When a promo is applied, store the user who applied it in the session.
+// On every session load, if the stored user doesn't match the current user,
+// remove all coupons — this reliably clears promos on logout regardless of
+// WooCommerce's shutdown session-save timing.
+add_action('woocommerce_cart_loaded_from_session', function() {
+    if ( WC()->cart->get_applied_coupons() ) {
+        $applied_by = (int) WC()->session->get( 'np_promo_user', 0 );
+        $current    = get_current_user_id(); // 0 if guest
+        if ( $applied_by !== $current ) {
+            WC()->cart->remove_coupons();
+            WC()->session->set( 'np_promo_user', 0 );
+        }
     }
-    // Remove persistent cart saved in user meta (prevents restore on next login)
+});
+
+// Also clear persistent cart meta on logout so promo doesn't restore on next login
+add_action('wp_logout', function( $user_id ) {
     delete_user_meta( $user_id, '_woocommerce_persistent_cart_' . get_current_blog_id() );
 });
 
@@ -440,6 +450,8 @@ function handle_apply_promo_code() {
     $result = WC()->cart->apply_coupon($code);
 
     if ( $result ) {
+        // Remember who applied this promo so we can clear it on logout
+        WC()->session->set( 'np_promo_user', get_current_user_id() );
         WC()->cart->calculate_totals();
         $discount = WC()->cart->get_coupon_discount_amount($code);
         wp_send_json_success([

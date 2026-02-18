@@ -51,6 +51,7 @@ function npApplyPromo(btn) {
             msg.textContent = 'Промокод активовано';
             input.disabled  = true;
             btn.disabled    = true;
+            setTimeout(function() { window.location.reload(); }, 600);
         } else {
             msg.className   = 'np-promo__msg np-promo__msg--err';
             msg.textContent = response.data.message || 'Невірний промокод';
