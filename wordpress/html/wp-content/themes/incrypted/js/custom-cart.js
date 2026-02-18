@@ -1,3 +1,22 @@
+// Remove applied promo code
+function npRemovePromo(code) {
+    var data = new URLSearchParams();
+    data.append('action',     'remove_promo_code');
+    data.append('promo_code', code);
+    data.append('nonce',      (window.custom_cart_ajax || {}).promo_nonce || '');
+
+    fetch((window.custom_cart_ajax || {}).ajax_url || '/wp-admin/admin-ajax.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: data
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(response) {
+        if (response.success) { window.location.reload(); }
+    })
+    .catch(function() {});
+}
+
 // Global promo code handler — works regardless of jQuery noConflict/scope
 function npApplyPromo(btn) {
     var wrapper = btn.closest('.np-promo');

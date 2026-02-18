@@ -388,7 +388,21 @@ add_filter('woocommerce_cart_totals_coupon_label', function($label, $coupon) {
     return 'Discount від промокода';
 }, 10, 2);
 
-// Promo code
+// Remove promo code
+add_action('wp_ajax_remove_promo_code', 'handle_remove_promo_code');
+add_action('wp_ajax_nopriv_remove_promo_code', 'handle_remove_promo_code');
+
+function handle_remove_promo_code() {
+    if ( ! check_ajax_referer('promo_code_nonce', 'nonce', false) ) {
+        wp_send_json_error(['message' => 'Помилка безпеки']);
+    }
+    $code = sanitize_text_field(wp_unslash($_POST['promo_code'] ?? ''));
+    WC()->cart->remove_coupon($code);
+    WC()->cart->calculate_totals();
+    wp_send_json_success(['message' => 'Промокод видалено']);
+}
+
+// Apply promo code
 add_action('wp_ajax_apply_promo_code', 'handle_apply_promo_code');
 add_action('wp_ajax_nopriv_apply_promo_code', 'handle_apply_promo_code');
 

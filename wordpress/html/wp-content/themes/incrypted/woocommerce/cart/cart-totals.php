@@ -33,8 +33,12 @@ defined( 'ABSPATH' ) || exit;
 
 		<?php foreach ( WC()->cart->get_coupons() as $code => $coupon ) : ?>
 			<tr class="cart-discount">
-				<th><?php esc_attr_e( 'Discount', 'incrypted' ); ?></th>
-				<td>-<?php wc_cart_totals_coupon_html( $coupon ); ?></td>
+				<th>
+					<?php esc_html_e( 'Промокод', 'incrypted' ); ?>:
+					<span class="np-coupon-code"><?php echo esc_html( strtoupper( $code ) ); ?></span>
+					<a href="#" class="np-coupon-remove" onclick="npRemovePromo('<?php echo esc_js( $code ); ?>'); return false;" title="<?php esc_attr_e( 'Видалити', 'incrypted' ); ?>">×</a>
+				</th>
+				<td>−<?php wc_cart_totals_coupon_html( $coupon ); ?></td>
 			</tr>
 		<?php endforeach; ?>
 
@@ -103,13 +107,29 @@ defined( 'ABSPATH' ) || exit;
 
 	</table>
 
+	<?php
+	$_np_coupons = WC()->cart->get_applied_coupons();
+	$_np_applied = ! empty( $_np_coupons );
+	$_np_code    = $_np_applied ? strtoupper( $_np_coupons[0] ) : '';
+	?>
 	<div class="np-promo" id="np-promo-cart">
 		<div class="np-promo__field">
 			<span class="np-promo__label"><?php esc_html_e( 'Промокод', 'incrypted' ); ?></span>
-			<input type="text" class="np-promo__input" placeholder="<?php esc_attr_e( 'Введіть код', 'incrypted' ); ?>" autocomplete="off" />
-			<button type="button" class="np-promo__btn" onclick="npApplyPromo(this)"><?php esc_html_e( 'Застосувати', 'incrypted' ); ?></button>
+			<input type="text" class="np-promo__input"
+				placeholder="<?php esc_attr_e( 'Введіть код', 'incrypted' ); ?>"
+				autocomplete="off"
+				value="<?php echo esc_attr( $_np_code ); ?>"
+				<?php echo $_np_applied ? 'disabled' : ''; ?> />
+			<button type="button" class="np-promo__btn" onclick="npApplyPromo(this)"
+				<?php echo $_np_applied ? 'disabled' : ''; ?>>
+				<?php esc_html_e( 'Застосувати', 'incrypted' ); ?>
+			</button>
 		</div>
-		<span class="np-promo__msg" aria-live="polite"></span>
+		<?php if ( $_np_applied ) : ?>
+			<span class="np-promo__msg np-promo__msg--ok"><?php esc_html_e( 'Промокод застосовано!', 'incrypted' ); ?></span>
+		<?php else : ?>
+			<span class="np-promo__msg" aria-live="polite"></span>
+		<?php endif; ?>
 	</div>
 
 	<div class="wc-proceed-to-checkout">

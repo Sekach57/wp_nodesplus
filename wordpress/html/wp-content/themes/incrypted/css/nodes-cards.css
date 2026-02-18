@@ -1203,3 +1203,26 @@ body.np-modal-open {
 
 .np-promo__msg--ok  { color: #2e7d32; }
 .np-promo__msg--err { color: #c62828; }
+
+/* ── Coupon row in cart totals ──────────────────────────── */
+.np-coupon-code {
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-left: 2px;
+}
+
+.np-coupon-remove {
+    display: inline-block;
+    margin-left: 6px;
+    color: #999;
+    font-size: 16px;
+    line-height: 1;
+    text-decoration: none;
+    vertical-align: middle;
+    transition: color 0.15s;
+}
+
+.np-coupon-remove:hover {
+    color: #c62828;
+    text-decoration: none;
+}
