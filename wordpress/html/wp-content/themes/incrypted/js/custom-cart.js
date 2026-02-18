@@ -47,9 +47,8 @@ function npApplyPromo(btn) {
     .then(function(r) { return r.json(); })
     .then(function(response) {
         if (response.success) {
-            var discount = response.data.discount ? ' (−' + response.data.discount + ')' : '';
             msg.className   = 'np-promo__msg np-promo__msg--ok';
-            msg.textContent = response.data.message + discount;
+            msg.textContent = 'Промокод активовано';
             input.disabled  = true;
             btn.disabled    = true;
         } else {

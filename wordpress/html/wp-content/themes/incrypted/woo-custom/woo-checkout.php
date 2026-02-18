@@ -134,15 +134,14 @@ add_filter('woocommerce_cart_item_quantity', function($product_quantity, $cart_i
     return $product_quantity;
 }, 10, 3);
 
-// Clear applied coupons when the user logs out
+// Destroy WC session on logout so promo codes don't persist
 add_action('wp_logout', function( $user_id ) {
-    if ( function_exists('WC') && WC()->cart ) {
-        WC()->cart->remove_coupons();
-        WC()->cart->calculate_totals();
+    // Destroy the WC session (clears cart + coupons cookie)
+    if ( function_exists('WC') && WC()->session ) {
+        WC()->session->destroy_session();
     }
-    // Also clear from the persistent cart stored in user meta
-    $blog_id = get_current_blog_id();
-    delete_user_meta( $user_id, '_woocommerce_persistent_cart_' . $blog_id );
+    // Remove persistent cart saved in user meta (prevents restore on next login)
+    delete_user_meta( $user_id, '_woocommerce_persistent_cart_' . get_current_blog_id() );
 });
 
 add_action('woocommerce_cart_loaded_from_session', function() {

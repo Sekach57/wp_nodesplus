@@ -1119,7 +1119,7 @@ body > .woocommerce {
       display: none; }
     .woocommerce_container .checkout.woocommerce-checkout #order_review {
       width: calc(100% - 400px); }
-      .woocommerce_container .checkout.woocommerce-checkout #order_review .product-total, .woocommerce_container .checkout.woocommerce-checkout #order_review .cart-subtotal td, .woocommerce_container .checkout.woocommerce-checkout #order_review .order-total td, .woocommerce_container .checkout.woocommerce-checkout #order_review .cart-discount td {
+      .woocommerce_container .checkout.woocommerce-checkout #order_review .product-total, .woocommerce_container .checkout.woocommerce-checkout #order_review .cart-subtotal td, .woocommerce_container .checkout.woocommerce-checkout #order_review .order-total td, .woocommerce_container .checkout.woocommerce-checkout #order_review .cart-discount td, .woocommerce_container .checkout.woocommerce-checkout #order_review .fee td {
         text-align: right; }
     .woocommerce_container .checkout.woocommerce-checkout .woocommerce-NoticeGroup-checkout {
       min-width: 100%; }
