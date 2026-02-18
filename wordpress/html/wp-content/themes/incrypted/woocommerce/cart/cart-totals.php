@@ -107,7 +107,7 @@ defined( 'ABSPATH' ) || exit;
 		<div class="np-promo__field">
 			<span class="np-promo__label"><?php esc_html_e( 'Промокод', 'incrypted' ); ?></span>
 			<input type="text" class="np-promo__input" placeholder="<?php esc_attr_e( 'Введіть код', 'incrypted' ); ?>" autocomplete="off" />
-			<button type="button" class="np-promo__btn"><?php esc_html_e( 'Застосувати', 'incrypted' ); ?></button>
+			<button type="button" class="np-promo__btn" onclick="npApplyPromo(this)"><?php esc_html_e( 'Застосувати', 'incrypted' ); ?></button>
 		</div>
 		<span class="np-promo__msg" aria-live="polite"></span>
 	</div>

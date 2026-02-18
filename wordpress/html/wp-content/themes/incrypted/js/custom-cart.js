@@ -1,3 +1,51 @@
+// Global promo code handler — works regardless of jQuery noConflict/scope
+function npApplyPromo(btn) {
+    var wrapper = btn.closest('.np-promo');
+    var input   = wrapper.querySelector('.np-promo__input');
+    var msg     = wrapper.querySelector('.np-promo__msg');
+    var code    = input.value.trim();
+
+    if (!code) {
+        msg.className = 'np-promo__msg np-promo__msg--err';
+        msg.textContent = 'Введіть промокод';
+        return;
+    }
+
+    btn.disabled   = true;
+    msg.className  = 'np-promo__msg';
+    msg.textContent = '...';
+
+    var data = new URLSearchParams();
+    data.append('action',     'apply_promo_code');
+    data.append('promo_code', code);
+    data.append('nonce',      (window.custom_cart_ajax || {}).promo_nonce || '');
+
+    fetch((window.custom_cart_ajax || {}).ajax_url || '/wp-admin/admin-ajax.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: data
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(response) {
+        if (response.success) {
+            var discount = response.data.discount ? ' (−' + response.data.discount + ')' : '';
+            msg.className   = 'np-promo__msg np-promo__msg--ok';
+            msg.textContent = response.data.message + discount;
+            input.disabled  = true;
+            btn.disabled    = true;
+        } else {
+            msg.className   = 'np-promo__msg np-promo__msg--err';
+            msg.textContent = response.data.message || 'Невірний промокод';
+            btn.disabled    = false;
+        }
+    })
+    .catch(function() {
+        msg.className   = 'np-promo__msg np-promo__msg--err';
+        msg.textContent = 'Помилка мережі. Спробуйте ще.';
+        btn.disabled    = false;
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     initializeCart();
 
@@ -333,47 +381,9 @@ jQuery(document).ready(function($) {
                 submitButton.prop('disabled', false).text(originalText);
             }
         });
-    // Promo code handler
-    jQuery(document).on('click', '.np-promo__btn', function() {
-        var $wrapper = jQuery(this).closest('.np-promo');
-        var $input = $wrapper.find('.np-promo__input');
-        var $msg = $wrapper.find('.np-promo__msg');
-        var $btn = jQuery(this);
-        var code = $input.val().trim();
-
-        if (!code) {
-            $msg.attr('class', 'np-promo__msg np-promo__msg--err').text('Введіть промокод');
-            return;
-        }
-
-        $btn.prop('disabled', true);
-        $msg.attr('class', 'np-promo__msg').text('...');
-
-        jQuery.post(custom_cart_ajax.ajax_url, {
-            action: 'apply_promo_code',
-            promo_code: code,
-            nonce: custom_cart_ajax.promo_nonce
-        }).done(function(response) {
-            if (response.success) {
-                var discount = response.data.discount ? ' (−' + response.data.discount + ')' : '';
-                $msg.attr('class', 'np-promo__msg np-promo__msg--ok').text(response.data.message + discount);
-                $input.prop('disabled', true);
-                $btn.prop('disabled', true);
-            } else {
-                $msg.attr('class', 'np-promo__msg np-promo__msg--err').text(response.data.message);
-                $btn.prop('disabled', false);
-            }
-        }).fail(function() {
-            $msg.attr('class', 'np-promo__msg np-promo__msg--err').text('Помилка мережі. Спробуйте ще.');
-            $btn.prop('disabled', false);
-        });
-    });
-
-    // Allow applying promo code with Enter key
+    // Enter key on promo input
     jQuery(document).on('keydown', '.np-promo__input', function(e) {
-        if (e.key === 'Enter') {
-            jQuery(this).closest('.np-promo').find('.np-promo__btn').trigger('click');
-        }
+        if (e.key === 'Enter') { npApplyPromo(jQuery(this).closest('.np-promo').find('.np-promo__btn')[0]); }
     });
 
     });
