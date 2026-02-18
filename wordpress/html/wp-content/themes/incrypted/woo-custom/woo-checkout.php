@@ -221,37 +221,26 @@ function apply_role_discount_as_fee( $cart ) {
         }
     }
 
-    $user              = wp_get_current_user();
-    $roles_and_coupons = get_field('acf_discounts', 'option');
+    $user      = wp_get_current_user();
+    $discounts = class_exists( 'INCR_Discounts_Admin' ) ? INCR_Discounts_Admin::get_discounts() : [];
 
-    if ( empty($roles_and_coupons) ) return;
+    if ( empty( $discounts ) ) return;
 
-    // Build role → coupon map
-    $role_coupons = [];
-    foreach ( $roles_and_coupons as $item ) {
-        $role_coupons[ $item['user_role'] ] = $item['coupon'];
+    // Build role → discount map
+    $role_map = [];
+    foreach ( $discounts as $item ) {
+        $role_map[ $item['role'] ] = $item;
     }
 
-    // Find first matching role and apply fee
+    // Find first matching role and apply negative fee
     foreach ( $user->roles as $role ) {
-        if ( ! isset( $role_coupons[$role] ) ) continue;
+        if ( ! isset( $role_map[ $role ] ) ) continue;
 
-        $coupon = new WC_Coupon( $role_coupons[$role] );
-        if ( ! $coupon->get_id() ) continue;
-
-        $type     = $coupon->get_discount_type();
-        $amount   = (float) $coupon->get_amount();
+        $item     = $role_map[ $role ];
+        $percent  = (float) $item['percent'];
+        $label    = ! empty( $item['label'] ) ? $item['label'] : sprintf( __( 'Знижка %s%%', 'incrypted' ), $percent );
         $subtotal = $cart->get_subtotal();
-
-        if ( $type === 'percent' ) {
-            $discount = round( $subtotal * $amount / 100, 2 );
-            $label    = sprintf( __('Знижка %s%%', 'incrypted'), $amount );
-        } elseif ( $type === 'fixed_cart' ) {
-            $discount = min( $amount, $subtotal );
-            $label    = __('Знижка', 'incrypted');
-        } else {
-            break;
-        }
+        $discount = round( $subtotal * $percent / 100, 2 );
 
         if ( $discount > 0 ) {
             $cart->add_fee( $label, -$discount, false );
