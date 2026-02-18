@@ -198,10 +198,12 @@ function makeRequest(string $method, string $url, ?array $data = null, $authToke
     $ch = curl_init($url);
 
     curl_setopt_array($ch, [
-        CURLOPT_CUSTOMREQUEST => $method,
-        CURLOPT_HEADER => true,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
+        CURLOPT_CUSTOMREQUEST    => $method,
+        CURLOPT_HEADER           => true,
+        CURLOPT_RETURNTRANSFER   => true,
+        CURLOPT_CONNECTTIMEOUT   => 5,
+        CURLOPT_TIMEOUT          => 10,
+        CURLOPT_HTTPHEADER       => [
             'Content-Type: application/json',
             'Authorization: ' . $authToken
         ]

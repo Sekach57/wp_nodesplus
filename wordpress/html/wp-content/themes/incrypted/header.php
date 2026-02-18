@@ -20,10 +20,7 @@
 
     <meta name="theme-color" content="#1E1E1E">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&family=Onest:wght@300;400;500&display=swap"
-          rel="stylesheet">
+    <link rel="stylesheet" href="<?php echo get_template_directory_uri(); ?>/css/fonts.css?ver=1">
 </head>
 
 <body>
