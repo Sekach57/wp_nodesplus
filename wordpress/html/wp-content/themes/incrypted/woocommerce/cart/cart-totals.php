@@ -103,6 +103,15 @@ defined( 'ABSPATH' ) || exit;
 
 	</table>
 
+	<div class="np-promo" id="np-promo-cart">
+		<div class="np-promo__field">
+			<span class="np-promo__label"><?php esc_html_e( 'Промокод', 'incrypted' ); ?></span>
+			<input type="text" class="np-promo__input" placeholder="<?php esc_attr_e( 'Введіть код', 'incrypted' ); ?>" autocomplete="off" />
+			<button type="button" class="np-promo__btn"><?php esc_html_e( 'Застосувати', 'incrypted' ); ?></button>
+		</div>
+		<span class="np-promo__msg" aria-live="polite"></span>
+	</div>
+
 	<div class="wc-proceed-to-checkout">
 		<?php do_action( 'woocommerce_proceed_to_checkout' ); ?>
 	</div>

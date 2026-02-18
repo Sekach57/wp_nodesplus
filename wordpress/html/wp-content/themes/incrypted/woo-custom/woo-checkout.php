@@ -383,20 +383,6 @@ function add_text_to_lost_password_footer() {
 add_action( 'wp_footer', 'add_text_to_lost_password_footer' );
 
 
-// Promo code block on cart page
-add_action('woocommerce_proceed_to_checkout', function() {
-    ?>
-    <div class="np-promo" id="np-promo-cart">
-        <div class="np-promo__field">
-            <span class="np-promo__label"><?php esc_html_e('Промокод', 'incrypted'); ?></span>
-            <input type="text" class="np-promo__input" placeholder="<?php esc_attr_e('Введіть код', 'incrypted'); ?>" autocomplete="off" />
-            <button type="button" class="np-promo__btn"><?php esc_html_e('Застосувати', 'incrypted'); ?></button>
-        </div>
-        <span class="np-promo__msg" aria-live="polite"></span>
-    </div>
-    <?php
-}, 5);
-
 // Label for applied promo code in cart totals
 add_filter('woocommerce_cart_totals_coupon_label', function($label, $coupon) {
     return 'Discount від промокода';
@@ -407,15 +393,11 @@ add_action('wp_ajax_apply_promo_code', 'handle_apply_promo_code');
 add_action('wp_ajax_nopriv_apply_promo_code', 'handle_apply_promo_code');
 
 function handle_apply_promo_code() {
-    error_log('[promo] handler called, POST=' . json_encode($_POST));
-
     if ( ! check_ajax_referer('promo_code_nonce', 'nonce', false) ) {
-        error_log('[promo] nonce failed');
         wp_send_json_error(['message' => 'Помилка безпеки. Оновіть сторінку.']);
     }
 
     $code = sanitize_text_field(wp_unslash($_POST['promo_code'] ?? ''));
-    error_log('[promo] code=' . $code);
 
     if ( empty($code) ) {
         wp_send_json_error(['message' => 'Введіть промокод']);

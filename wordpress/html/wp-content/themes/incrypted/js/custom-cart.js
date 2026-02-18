@@ -334,41 +334,45 @@ jQuery(document).ready(function($) {
             }
         });
     // Promo code handler
-    $(document).on('click', '.np-promo__btn', function() {
-        var $wrapper = $(this).closest('.np-promo');
+    jQuery(document).on('click', '.np-promo__btn', function() {
+        var $wrapper = jQuery(this).closest('.np-promo');
         var $input = $wrapper.find('.np-promo__input');
         var $msg = $wrapper.find('.np-promo__msg');
-        var $btn = $(this);
+        var $btn = jQuery(this);
         var code = $input.val().trim();
 
-        if (!code) return;
+        if (!code) {
+            $msg.attr('class', 'np-promo__msg np-promo__msg--err').text('Введіть промокод');
+            return;
+        }
 
         $btn.prop('disabled', true);
-        $msg.attr('class', 'np-promo__msg').text('');
+        $msg.attr('class', 'np-promo__msg').text('...');
 
-        $.post(custom_cart_ajax.ajax_url, {
+        jQuery.post(custom_cart_ajax.ajax_url, {
             action: 'apply_promo_code',
             promo_code: code,
             nonce: custom_cart_ajax.promo_nonce
         }).done(function(response) {
             if (response.success) {
                 var discount = response.data.discount ? ' (−' + response.data.discount + ')' : '';
-                $msg.addClass('np-promo__msg--ok').text(response.data.message + discount);
+                $msg.attr('class', 'np-promo__msg np-promo__msg--ok').text(response.data.message + discount);
                 $input.prop('disabled', true);
+                $btn.prop('disabled', true);
             } else {
-                $msg.addClass('np-promo__msg--err').text(response.data.message);
+                $msg.attr('class', 'np-promo__msg np-promo__msg--err').text(response.data.message);
+                $btn.prop('disabled', false);
             }
         }).fail(function() {
-            $msg.addClass('np-promo__msg--err').text('Network error');
-        }).always(function() {
+            $msg.attr('class', 'np-promo__msg np-promo__msg--err').text('Помилка мережі. Спробуйте ще.');
             $btn.prop('disabled', false);
         });
     });
 
     // Allow applying promo code with Enter key
-    $(document).on('keydown', '.np-promo__input', function(e) {
+    jQuery(document).on('keydown', '.np-promo__input', function(e) {
         if (e.key === 'Enter') {
-            $(this).closest('.np-promo').find('.np-promo__btn').trigger('click');
+            jQuery(this).closest('.np-promo').find('.np-promo__btn').trigger('click');
         }
     });
 
