@@ -206,45 +206,58 @@ add_filter('woocommerce_cart_needs_shipping', '__return_false');
  * ????????????? ????????? ?????? ??? ????????? ?????
  * ? ??????????? ?????????? Terra Wallet.
  */
-add_action('woocommerce_before_calculate_totals', 'apply_role_coupon_automatically', 10, 1);
+// Role-based discount as a negative fee (no coupon conflicts, clean cart totals)
+add_action('woocommerce_cart_calculate_fees', 'apply_role_discount_as_fee', 10, 1);
 
-function apply_role_coupon_automatically( $cart ) {
+function apply_role_discount_as_fee( $cart ) {
     if ( is_admin() && ! defined('DOING_AJAX') ) return;
     if ( ! is_user_logged_in() ) return;
 
-    $user = wp_get_current_user();
-
-    $roles_and_coupons = get_field('acf_discounts', 'option');
-
-    if(empty($roles_and_coupons) || count($roles_and_coupons) < 1) {
-        return;
+    // Skip if wallet top-up is in cart
+    foreach ( $cart->get_cart() as $cart_item ) {
+        $product = $cart_item['data'];
+        if ( $product->get_slug() === 'wallet-topup' || $product->get_id() === 289 ) {
+            return;
+        }
     }
 
-    $role_coupons = [];
+    $user              = wp_get_current_user();
+    $roles_and_coupons = get_field('acf_discounts', 'option');
 
-    foreach ($roles_and_coupons as $item) {
+    if ( empty($roles_and_coupons) ) return;
+
+    // Build role → coupon map
+    $role_coupons = [];
+    foreach ( $roles_and_coupons as $item ) {
         $role_coupons[ $item['user_role'] ] = $item['coupon'];
     }
 
-    $skip = false;
-    foreach ( $cart->get_cart() as $cart_item ) {
-        $product = $cart_item['data'];
+    // Find first matching role and apply fee
+    foreach ( $user->roles as $role ) {
+        if ( ! isset( $role_coupons[$role] ) ) continue;
 
-        if (
-                $product->get_slug() == "wallet-topup" ||
-                $product->get_id() == 289
-        ) {
-            $skip = true;
+        $coupon = new WC_Coupon( $role_coupons[$role] );
+        if ( ! $coupon->get_id() ) continue;
+
+        $type     = $coupon->get_discount_type();
+        $amount   = (float) $coupon->get_amount();
+        $subtotal = $cart->get_subtotal();
+
+        if ( $type === 'percent' ) {
+            $discount = round( $subtotal * $amount / 100, 2 );
+            $label    = sprintf( __('Знижка %s%%', 'incrypted'), $amount );
+        } elseif ( $type === 'fixed_cart' ) {
+            $discount = min( $amount, $subtotal );
+            $label    = __('Знижка', 'incrypted');
+        } else {
             break;
         }
-    }
 
-    if ( $skip ) return;
-
-    foreach ( $user->roles as $role ) {
-        if ( isset( $role_coupons[$role] ) && ! $cart->has_discount( $role_coupons[$role] ) ) {
-            $cart->apply_coupon( $role_coupons[$role] );
+        if ( $discount > 0 ) {
+            $cart->add_fee( $label, -$discount, false );
         }
+
+        break; // Only first matching role
     }
 }
 
