@@ -1328,6 +1328,46 @@ class INCR_Nodes_Admin {
         }
         echo '</div>';
 
+        // Node Holders summary
+        if (!empty($node_types)) {
+            global $wpdb;
+            $nodes_tbl = $wpdb->prefix . 'incr_nodes';
+
+            echo '<div class="postbox" style="padding:12px 16px; margin-bottom:16px;">';
+            echo '<h3 style="margin:0 0 8px;">Node Holders</h3>';
+            echo '<table class="widefat striped" style="max-width:800px;"><thead><tr>';
+            echo '<th>Node Type</th><th>Holders</th><th>Users</th>';
+            echo '</tr></thead><tbody>';
+
+            foreach ($node_types as $nt) {
+                $holders = $wpdb->get_results($wpdb->prepare(
+                    "SELECT DISTINCT n.user_id FROM {$nodes_tbl} n WHERE n.node_type = %s AND n.user_id > 0",
+                    $nt
+                ), ARRAY_A);
+
+                $count = count($holders);
+                $user_labels = [];
+                foreach ($holders as $h) {
+                    $uid = (int) $h['user_id'];
+                    $u = get_userdata($uid);
+                    if ($u) {
+                        $profile_url = admin_url('user-edit.php?user_id=' . $uid);
+                        $user_labels[] = '<a href="' . esc_url($profile_url) . '">' . esc_html($u->display_name ?: $u->user_login) . '</a>';
+                    } else {
+                        $user_labels[] = '#' . $uid;
+                    }
+                }
+
+                echo '<tr>';
+                echo '<td><strong>' . esc_html($nt) . '</strong></td>';
+                echo '<td>' . $count . '</td>';
+                echo '<td>' . implode(', ', $user_labels) . '</td>';
+                echo '</tr>';
+            }
+
+            echo '</tbody></table></div>';
+        }
+
         if ($filters['user_id']) {
             echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin-bottom: 16px;">';
             echo '<input type="hidden" name="action" value="incr_refresh_user_nodes" />';
