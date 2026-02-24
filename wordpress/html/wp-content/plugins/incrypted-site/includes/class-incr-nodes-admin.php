@@ -12,6 +12,7 @@ class INCR_Nodes_Admin {
         add_action('admin_post_incr_save_nodes_columns', [__CLASS__, 'handle_save_nodes_columns']);
         add_action('incr_sync_all_nodes_job', [__CLASS__, 'run_sync_all_nodes']);
         add_action('admin_post_incr_send_tg_message', [__CLASS__, 'handle_send_tg_message']);
+        add_action('admin_post_incr_export_revenue', [__CLASS__, 'handle_export_revenue']);
 
         // Schedule twice daily sync if not already scheduled
         if (!wp_next_scheduled('incr_sync_all_nodes_job')) {
@@ -381,6 +382,150 @@ class INCR_Nodes_Admin {
             transition: width .3s;
         }
         .incr-ov-progress-bar--overdue { background: #d63638; }
+
+        /* Revenue filters */
+        .incr-ov-revenue-filters {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .incr-ov-revenue-filters label {
+            font-size: 13px;
+            color: #50575e;
+        }
+        .incr-ov-revenue-filters input[type="date"] {
+            padding: 4px 8px;
+        }
+        .incr-ov-revenue-presets {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .incr-ov-revenue-presets a {
+            padding: 4px 12px;
+            background: #f0f0f1;
+            border: 1px solid #c3c4c7;
+            border-radius: 3px;
+            text-decoration: none;
+            font-size: 12px;
+            color: #2271b1;
+        }
+        .incr-ov-revenue-presets a:hover,
+        .incr-ov-revenue-presets a.active {
+            background: #2271b1;
+            color: #fff;
+            border-color: #2271b1;
+        }
+
+        /* Revenue summary cards */
+        .incr-ov-rev-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .incr-ov-rev-card {
+            background: #f6f7f7;
+            border: 1px solid #c3c4c7;
+            border-radius: 4px;
+            padding: 12px 16px;
+            text-align: center;
+        }
+        .incr-ov-rev-card__label {
+            font-size: 12px;
+            color: #50575e;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .incr-ov-rev-card__value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1d2327;
+            display: block;
+        }
+
+        /* Growth indicators */
+        .incr-ov-growth {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .incr-ov-growth--up { color: #00a32a; }
+        .incr-ov-growth--up::before { content: "\25B2 "; font-size: 10px; }
+        .incr-ov-growth--down { color: #d63638; }
+        .incr-ov-growth--down::before { content: "\25BC "; font-size: 10px; }
+        .incr-ov-growth--flat { color: #787c82; }
+        .incr-ov-growth--flat::before { content: "\2014 "; }
+
+        /* Bar chart */
+        .incr-ov-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 120px;
+            margin-bottom: 20px;
+            padding: 0 4px;
+        }
+        .incr-ov-chart-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            min-width: 0;
+        }
+        .incr-ov-chart-bar {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            min-height: 0;
+        }
+        .incr-ov-chart-bar__fill--purchase {
+            background: #2271b1;
+            border-radius: 3px 3px 0 0;
+        }
+        .incr-ov-chart-bar__fill--renewal {
+            background: #00a32a;
+        }
+        .incr-ov-chart-bar__fill--purchase + .incr-ov-chart-bar__fill--renewal {
+            border-radius: 0;
+        }
+        .incr-ov-chart-bar__fill--purchase:last-child {
+            border-radius: 3px 3px 0 0;
+        }
+        .incr-ov-chart-label {
+            font-size: 10px;
+            color: #50575e;
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            text-align: center;
+        }
+        .incr-ov-chart-legend {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #50575e;
+        }
+        .incr-ov-chart-legend span::before {
+            content: "";
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .incr-ov-chart-legend .legend-purchase::before { background: #2271b1; }
+        .incr-ov-chart-legend .legend-renewal::before { background: #00a32a; }
         </style>
         <?php
     }
@@ -433,28 +578,19 @@ class INCR_Nodes_Admin {
         echo '</div>';
     }
 
-    private static function render_overview_revenue() {
-        echo '<div class="incr-ov-revenue postbox">';
-        echo '<h2>Revenue (Current Month)</h2>';
-
+    private static function get_revenue_data($from, $to) {
         if (!function_exists('wc_get_orders')) {
-            echo '<p>WooCommerce not available. No revenue data.</p>';
-            echo '</div>';
-            return;
+            return ['months' => [], 'totals' => ['orders' => 0, 'total' => 0.0, 'purchases' => 0.0, 'renewals' => 0.0]];
         }
-
-        $month_start = date('Y-m-01');
-        $month_end = date('Y-m-t');
 
         $orders = wc_get_orders([
             'status' => ['wc-completed', 'wc-processing'],
-            'date_created' => $month_start . '...' . $month_end,
+            'date_created' => $from . '...' . $to,
             'limit' => -1,
         ]);
 
-        $total_revenue = 0;
-        $purchase_revenue = 0;
-        $renewal_revenue = 0;
+        $months = [];
+        $order_ids_by_month = [];
 
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item) {
@@ -463,25 +599,341 @@ class INCR_Nodes_Admin {
                     continue;
                 }
 
+                $date_created = $order->get_date_created();
+                if (!$date_created) {
+                    continue;
+                }
+                $month_key = $date_created->date('Y-m');
                 $line_total = (float) $item->get_total();
-                $total_revenue += $line_total;
-
                 $op_type = $item->get_meta('Operation Type');
-                if ($op_type === 'Prolongation') {
-                    $renewal_revenue += $line_total;
+                $is_renewal = ($op_type === 'Prolongation');
+
+                if (!isset($months[$month_key])) {
+                    $months[$month_key] = ['total' => 0.0, 'purchases' => 0.0, 'renewals' => 0.0, 'orders' => 0];
+                    $order_ids_by_month[$month_key] = [];
+                }
+
+                $months[$month_key]['total'] += $line_total;
+                if ($is_renewal) {
+                    $months[$month_key]['renewals'] += $line_total;
                 } else {
-                    $purchase_revenue += $line_total;
+                    $months[$month_key]['purchases'] += $line_total;
+                }
+
+                $order_id = $order->get_id();
+                if (!in_array($order_id, $order_ids_by_month[$month_key], true)) {
+                    $order_ids_by_month[$month_key][] = $order_id;
+                    $months[$month_key]['orders']++;
                 }
             }
         }
 
-        echo '<div class="incr-ov-revenue-numbers">';
-        echo '<div class="incr-ov-rev-item"><span>Total</span><strong>' . wp_kses_post(wc_price($total_revenue)) . '</strong></div>';
-        echo '<div class="incr-ov-rev-item"><span>Purchases</span><strong>' . wp_kses_post(wc_price($purchase_revenue)) . '</strong></div>';
-        echo '<div class="incr-ov-rev-item"><span>Renewals</span><strong>' . wp_kses_post(wc_price($renewal_revenue)) . '</strong></div>';
+        // Fill gaps with zero months
+        $start = new \DateTime($from . '-01');
+        $end = new \DateTime($to);
+        $end->modify('first day of this month');
+        $interval = new \DateInterval('P1M');
+        $period = new \DatePeriod($start, $interval, $end->modify('+1 month'));
+
+        $filled = [];
+        foreach ($period as $dt) {
+            $key = $dt->format('Y-m');
+            $label = $dt->format('F Y');
+            $data = isset($months[$key]) ? $months[$key] : ['total' => 0.0, 'purchases' => 0.0, 'renewals' => 0.0, 'orders' => 0];
+            $data['label'] = $label;
+            $filled[$key] = $data;
+        }
+
+        $totals = ['orders' => 0, 'total' => 0.0, 'purchases' => 0.0, 'renewals' => 0.0];
+        foreach ($filled as $m) {
+            $totals['orders'] += $m['orders'];
+            $totals['total'] += $m['total'];
+            $totals['purchases'] += $m['purchases'];
+            $totals['renewals'] += $m['renewals'];
+        }
+
+        return ['months' => $filled, 'totals' => $totals];
+    }
+
+    private static function calc_growth($current, $previous) {
+        if ($previous == 0 && $current > 0) {
+            return ['value' => 0, 'direction' => 'up', 'label' => 'New'];
+        }
+        if ($previous == 0 && $current == 0) {
+            return ['value' => 0, 'direction' => 'flat', 'label' => '0%'];
+        }
+        $pct = round((($current - $previous) / $previous) * 100, 1);
+        if ($pct > 0) {
+            return ['value' => $pct, 'direction' => 'up', 'label' => '+' . $pct . '%'];
+        } elseif ($pct < 0) {
+            return ['value' => $pct, 'direction' => 'down', 'label' => $pct . '%'];
+        }
+        return ['value' => 0, 'direction' => 'flat', 'label' => '0%'];
+    }
+
+    private static function render_overview_revenue() {
+        echo '<div class="incr-ov-revenue postbox">';
+        echo '<h2>Revenue</h2>';
+
+        if (!function_exists('wc_get_orders')) {
+            echo '<p>WooCommerce not available. No revenue data.</p>';
+            echo '</div>';
+            return;
+        }
+
+        $overview_url = admin_url('admin.php?page=incr-nodes-overview');
+
+        // Read date params with defaults (current month)
+        $default_from = date('Y-m-01');
+        $default_to = date('Y-m-t');
+        $rev_from = isset($_GET['rev_from']) ? sanitize_text_field(wp_unslash($_GET['rev_from'])) : $default_from;
+        $rev_to = isset($_GET['rev_to']) ? sanitize_text_field(wp_unslash($_GET['rev_to'])) : $default_to;
+
+        // Validate dates
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $rev_from)) {
+            $rev_from = $default_from;
+        }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $rev_to)) {
+            $rev_to = $default_to;
+        }
+
+        // A) Date range form
+        echo '<form method="get" class="incr-ov-revenue-filters">';
+        echo '<input type="hidden" name="page" value="incr-nodes-overview" />';
+        // Preserve lookup param if present
+        $lookup = isset($_GET['lookup']) ? sanitize_text_field(wp_unslash($_GET['lookup'])) : '';
+        if ($lookup !== '') {
+            echo '<input type="hidden" name="lookup" value="' . esc_attr($lookup) . '" />';
+        }
+        echo '<label>From<br><input type="date" name="rev_from" value="' . esc_attr($rev_from) . '"></label>';
+        echo '<label>To<br><input type="date" name="rev_to" value="' . esc_attr($rev_to) . '"></label>';
+        echo '<button class="button button-primary" style="margin-bottom:1px;">Apply</button>';
+        echo '</form>';
+
+        // Quick presets
+        $this_month_from = date('Y-m-01');
+        $this_month_to = date('Y-m-t');
+        $three_months_from = date('Y-m-01', strtotime('-2 months'));
+        $three_months_to = date('Y-m-t');
+        $this_year_from = date('Y-01-01');
+        $this_year_to = date('Y-m-t');
+
+        $presets = [
+            'This Month' => [$this_month_from, $this_month_to],
+            'Last 3 Months' => [$three_months_from, $three_months_to],
+            'This Year' => [$this_year_from, $this_year_to],
+        ];
+
+        echo '<div class="incr-ov-revenue-presets">';
+        foreach ($presets as $label => $dates) {
+            $url = add_query_arg(['page' => 'incr-nodes-overview', 'rev_from' => $dates[0], 'rev_to' => $dates[1]], admin_url('admin.php'));
+            if ($lookup !== '') {
+                $url = add_query_arg('lookup', $lookup, $url);
+            }
+            $active = ($rev_from === $dates[0] && $rev_to === $dates[1]) ? ' active' : '';
+            echo '<a href="' . esc_url($url) . '" class="' . esc_attr($active) . '">' . esc_html($label) . '</a>';
+        }
         echo '</div>';
 
+        // Get data for selected period
+        $data = self::get_revenue_data($rev_from, $rev_to);
+        $totals = $data['totals'];
+        $months = $data['months'];
+
+        // Calculate comparison period (same length, immediately before)
+        $from_ts = strtotime($rev_from);
+        $to_ts = strtotime($rev_to);
+        $period_days = ($to_ts - $from_ts) / 86400;
+        $prev_to = date('Y-m-d', $from_ts - 86400);
+        $prev_from = date('Y-m-d', strtotime($prev_to) - (int) $period_days * 86400);
+        $prev_data = self::get_revenue_data($prev_from, $prev_to);
+        $prev_totals = $prev_data['totals'];
+
+        $growth_total = self::calc_growth($totals['total'], $prev_totals['total']);
+        $growth_purchases = self::calc_growth($totals['purchases'], $prev_totals['purchases']);
+        $growth_renewals = self::calc_growth($totals['renewals'], $prev_totals['renewals']);
+        $growth_orders = self::calc_growth($totals['orders'], $prev_totals['orders']);
+
+        // B) Summary cards
+        echo '<div class="incr-ov-rev-cards">';
+
+        $cards = [
+            ['label' => 'Total Revenue', 'value' => wc_price($totals['total']), 'growth' => $growth_total],
+            ['label' => 'Purchases', 'value' => wc_price($totals['purchases']), 'growth' => $growth_purchases],
+            ['label' => 'Renewals', 'value' => wc_price($totals['renewals']), 'growth' => $growth_renewals],
+            ['label' => 'Orders', 'value' => number_format_i18n($totals['orders']), 'growth' => $growth_orders],
+        ];
+
+        foreach ($cards as $card) {
+            echo '<div class="incr-ov-rev-card">';
+            echo '<span class="incr-ov-rev-card__label">' . esc_html($card['label']) . '</span>';
+            echo '<span class="incr-ov-rev-card__value">' . wp_kses_post($card['value']) . '</span>';
+            echo '<span class="incr-ov-growth incr-ov-growth--' . esc_attr($card['growth']['direction']) . '">' . esc_html($card['growth']['label']) . '</span>';
+            echo '</div>';
+        }
+
         echo '</div>';
+
+        // C) Bar chart
+        if (!empty($months)) {
+            $max_total = 0;
+            foreach ($months as $m) {
+                if ($m['total'] > $max_total) {
+                    $max_total = $m['total'];
+                }
+            }
+
+            echo '<div class="incr-ov-chart-legend">';
+            echo '<span class="legend-purchase">Purchases</span>';
+            echo '<span class="legend-renewal">Renewals</span>';
+            echo '</div>';
+
+            echo '<div class="incr-ov-chart">';
+            foreach ($months as $key => $m) {
+                $pct_purchase = $max_total > 0 ? ($m['purchases'] / $max_total) * 100 : 0;
+                $pct_renewal = $max_total > 0 ? ($m['renewals'] / $max_total) * 100 : 0;
+                $short_label = date('M', strtotime($key . '-01'));
+                $title_text = $m['label'] . ': Total ' . number_format($m['total'], 2) . ', Purchases ' . number_format($m['purchases'], 2) . ', Renewals ' . number_format($m['renewals'], 2);
+
+                echo '<div class="incr-ov-chart-col" title="' . esc_attr($title_text) . '">';
+                echo '<div class="incr-ov-chart-bar">';
+                if ($pct_purchase > 0) {
+                    echo '<div class="incr-ov-chart-bar__fill--purchase" style="height:' . esc_attr(round($pct_purchase, 1)) . '%;"></div>';
+                }
+                if ($pct_renewal > 0) {
+                    echo '<div class="incr-ov-chart-bar__fill--renewal" style="height:' . esc_attr(round($pct_renewal, 1)) . '%;"></div>';
+                }
+                if ($pct_purchase == 0 && $pct_renewal == 0) {
+                    echo '<div style="height:1px; background:#dcdcde;"></div>';
+                }
+                echo '</div>';
+                echo '<div class="incr-ov-chart-label">' . esc_html($short_label) . '</div>';
+                echo '</div>';
+            }
+            echo '</div>';
+        }
+
+        // D) Monthly breakdown table
+        if (!empty($months)) {
+            echo '<table class="widefat striped" style="margin-bottom:16px;">';
+            echo '<thead><tr><th>Month</th><th>Orders</th><th>Total</th><th>Purchases</th><th>Renewals</th><th>Change</th></tr></thead>';
+            echo '<tbody>';
+
+            $prev_month_total = null;
+            foreach ($months as $m) {
+                $change_html = '';
+                if ($prev_month_total !== null) {
+                    $g = self::calc_growth($m['total'], $prev_month_total);
+                    $change_html = '<span class="incr-ov-growth incr-ov-growth--' . esc_attr($g['direction']) . '">' . esc_html($g['label']) . '</span>';
+                } else {
+                    $change_html = '<span class="incr-ov-growth incr-ov-growth--flat">&mdash;</span>';
+                }
+
+                echo '<tr>';
+                echo '<td>' . esc_html($m['label']) . '</td>';
+                echo '<td>' . esc_html($m['orders']) . '</td>';
+                echo '<td>' . wp_kses_post(wc_price($m['total'])) . '</td>';
+                echo '<td>' . wp_kses_post(wc_price($m['purchases'])) . '</td>';
+                echo '<td>' . wp_kses_post(wc_price($m['renewals'])) . '</td>';
+                echo '<td>' . $change_html . '</td>';
+                echo '</tr>';
+
+                $prev_month_total = $m['total'];
+            }
+
+            // Footer totals
+            echo '<tr style="font-weight:700; background:#f0f0f1;">';
+            echo '<td>Total</td>';
+            echo '<td>' . esc_html($totals['orders']) . '</td>';
+            echo '<td>' . wp_kses_post(wc_price($totals['total'])) . '</td>';
+            echo '<td>' . wp_kses_post(wc_price($totals['purchases'])) . '</td>';
+            echo '<td>' . wp_kses_post(wc_price($totals['renewals'])) . '</td>';
+            echo '<td></td>';
+            echo '</tr>';
+
+            echo '</tbody></table>';
+        }
+
+        // E) Export CSV button
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin-top:8px;">';
+        echo '<input type="hidden" name="action" value="incr_export_revenue" />';
+        echo wp_nonce_field('incr_export_revenue', 'incr_export_revenue_nonce', true, false);
+        echo '<input type="hidden" name="rev_from" value="' . esc_attr($rev_from) . '" />';
+        echo '<input type="hidden" name="rev_to" value="' . esc_attr($rev_to) . '" />';
+        echo '<button class="button button-secondary">Export CSV</button>';
+        echo '</form>';
+
+        echo '</div>';
+    }
+
+    public static function handle_export_revenue() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
+        }
+
+        if (empty($_POST['incr_export_revenue_nonce']) || !wp_verify_nonce($_POST['incr_export_revenue_nonce'], 'incr_export_revenue')) {
+            wp_die('Invalid nonce');
+        }
+
+        $rev_from = isset($_POST['rev_from']) ? sanitize_text_field(wp_unslash($_POST['rev_from'])) : date('Y-m-01');
+        $rev_to = isset($_POST['rev_to']) ? sanitize_text_field(wp_unslash($_POST['rev_to'])) : date('Y-m-t');
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $rev_from)) {
+            $rev_from = date('Y-m-01');
+        }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $rev_to)) {
+            $rev_to = date('Y-m-t');
+        }
+
+        $data = self::get_revenue_data($rev_from, $rev_to);
+        $months = $data['months'];
+        $totals = $data['totals'];
+
+        $filename = 'nodesplus-revenue-' . $rev_from . '-to-' . $rev_to . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        // UTF-8 BOM for Excel
+        echo "\xEF\xBB\xBF";
+
+        $out = fopen('php://output', 'w');
+        fputcsv($out, ['Month', 'Orders', 'Total Revenue', 'Purchases', 'Renewals', 'Change %']);
+
+        $prev_total = null;
+        foreach ($months as $m) {
+            $change = '';
+            if ($prev_total !== null) {
+                $g = self::calc_growth($m['total'], $prev_total);
+                $change = $g['label'];
+            }
+
+            fputcsv($out, [
+                $m['label'],
+                $m['orders'],
+                number_format($m['total'], 2, '.', ''),
+                number_format($m['purchases'], 2, '.', ''),
+                number_format($m['renewals'], 2, '.', ''),
+                $change,
+            ]);
+
+            $prev_total = $m['total'];
+        }
+
+        // Totals row
+        fputcsv($out, [
+            'TOTAL',
+            $totals['orders'],
+            number_format($totals['total'], 2, '.', ''),
+            number_format($totals['purchases'], 2, '.', ''),
+            number_format($totals['renewals'], 2, '.', ''),
+            '',
+        ]);
+
+        fclose($out);
+        exit;
     }
 
     private static function render_overview_expiring() {
