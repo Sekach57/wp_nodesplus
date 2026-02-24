@@ -13,6 +13,7 @@ class INCR_Nodes_Admin {
         add_action('incr_sync_all_nodes_job', [__CLASS__, 'run_sync_all_nodes']);
         add_action('admin_post_incr_send_tg_message', [__CLASS__, 'handle_send_tg_message']);
         add_action('admin_post_incr_export_revenue', [__CLASS__, 'handle_export_revenue']);
+        add_action('admin_post_incr_send_project_update', [__CLASS__, 'handle_send_project_update']);
 
         // Schedule twice daily sync if not already scheduled
         if (!wp_next_scheduled('incr_sync_all_nodes_job')) {
@@ -69,6 +70,14 @@ class INCR_Nodes_Admin {
             'manage_options',
             'incr-send-tg-message',
             [__CLASS__, 'render_send_tg_message']
+        );
+        add_submenu_page(
+            'incr-nodes-overview',
+            'Project Updates',
+            'Project Updates',
+            'manage_options',
+            'incr-project-updates',
+            [__CLASS__, 'render_project_updates']
         );
     }
 
@@ -2032,6 +2041,220 @@ class INCR_Nodes_Admin {
             'status' => $status,
             'sent_at' => current_time('mysql'),
             'sent_by' => get_current_user_id(),
+        ]);
+    }
+
+    // =========================================================================
+    // Project Updates — broadcast by node type
+    // =========================================================================
+
+    public static function render_project_updates() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
+        }
+
+        global $wpdb;
+        $nodes_table = $wpdb->prefix . 'incr_nodes';
+        $links_table = $wpdb->prefix . 'incr_telegram_links';
+
+        // Notices
+        $notice = isset($_GET['pu_notice']) ? sanitize_text_field(wp_unslash($_GET['pu_notice'])) : '';
+
+        echo '<div class="wrap">';
+        echo '<h1>Project Updates</h1>';
+
+        if ($notice) {
+            if (preg_match('/^sent_(\d+)$/', $notice, $m)) {
+                echo '<div class="notice notice-success is-dismissible"><p>Update sent to ' . (int) $m[1] . ' users.</p></div>';
+            } elseif ($notice === 'no_recipients') {
+                echo '<div class="notice notice-warning is-dismissible"><p>No users with this node type and Telegram linked.</p></div>';
+            } elseif ($notice === 'no_token') {
+                echo '<div class="notice notice-error is-dismissible"><p>Telegram bot token not configured.</p></div>';
+            } elseif ($notice === 'empty_message') {
+                echo '<div class="notice notice-warning is-dismissible"><p>Message cannot be empty.</p></div>';
+            } elseif ($notice === 'empty_node_type') {
+                echo '<div class="notice notice-warning is-dismissible"><p>Please select a node type.</p></div>';
+            }
+        }
+
+        // Get node types with recipient counts
+        $node_types = class_exists('INCR_Nodes_Store') ? INCR_Nodes_Store::get_distinct_node_types() : [];
+
+        $type_recipient_counts = [];
+        foreach ($node_types as $type) {
+            $count = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(DISTINCT l.telegram_chat_id)
+                 FROM {$nodes_table} n
+                 INNER JOIN {$links_table} l ON l.wp_user_id = n.user_id
+                 WHERE n.node_type = %s",
+                $type
+            ));
+            $type_recipient_counts[$type] = $count;
+        }
+
+        // Send form
+        echo '<h2>Send Update</h2>';
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        echo '<input type="hidden" name="action" value="incr_send_project_update">';
+        wp_nonce_field('incr_project_update', 'incr_project_update_nonce');
+
+        echo '<table class="form-table"><tbody>';
+
+        echo '<tr><th><label for="node_type">Node Type</label></th><td>';
+        echo '<select name="node_type" id="node_type" required>';
+        echo '<option value="">— Select —</option>';
+        foreach ($node_types as $type) {
+            $count = $type_recipient_counts[$type];
+            echo '<option value="' . esc_attr($type) . '">' . esc_html($type) . ' (' . $count . ' recipients)</option>';
+        }
+        echo '</select></td></tr>';
+
+        echo '<tr><th><label for="pu_message">Message</label></th><td>';
+        echo '<textarea name="pu_message" id="pu_message" rows="6" cols="60" required></textarea>';
+        echo '</td></tr>';
+
+        echo '</tbody></table>';
+        echo '<p><input type="submit" class="button button-primary" value="Send Update" onclick="return confirm(\'Send this update to all matching users?\');"></p>';
+        echo '</form>';
+
+        // History table
+        echo '<hr><h2>History</h2>';
+        $history_table = $wpdb->prefix . 'incr_project_updates';
+
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$history_table}'") === $history_table) {
+            $rows = $wpdb->get_results(
+                "SELECT * FROM {$history_table} ORDER BY sent_at DESC LIMIT 20",
+                ARRAY_A
+            );
+
+            if ($rows) {
+                echo '<table class="widefat striped"><thead><tr>';
+                echo '<th>Date</th><th>Node Type</th><th>Message</th><th>Recipients</th><th>Sent By</th>';
+                echo '</tr></thead><tbody>';
+
+                foreach ($rows as $row) {
+                    $sender = get_userdata((int) $row['sent_by']);
+                    $sender_label = $sender ? $sender->display_name : '#' . $row['sent_by'];
+                    $msg_preview = mb_strlen($row['message']) > 80
+                        ? mb_substr($row['message'], 0, 80) . '…'
+                        : $row['message'];
+
+                    echo '<tr>';
+                    echo '<td>' . esc_html($row['sent_at']) . '</td>';
+                    echo '<td>' . esc_html($row['node_type']) . '</td>';
+                    echo '<td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' . esc_html($msg_preview) . '</td>';
+                    echo '<td>' . (int) $row['recipients_count'] . '</td>';
+                    echo '<td>' . esc_html($sender_label) . '</td>';
+                    echo '</tr>';
+                }
+                echo '</tbody></table>';
+            } else {
+                echo '<p>No updates sent yet.</p>';
+            }
+        } else {
+            echo '<p>History will appear after the first update is sent.</p>';
+        }
+
+        echo '</div>';
+    }
+
+    public static function handle_send_project_update() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
+        }
+
+        if (empty($_POST['incr_project_update_nonce']) || !wp_verify_nonce($_POST['incr_project_update_nonce'], 'incr_project_update')) {
+            wp_die('Invalid nonce');
+        }
+
+        $node_type = isset($_POST['node_type']) ? sanitize_text_field(wp_unslash($_POST['node_type'])) : '';
+        $message   = isset($_POST['pu_message']) ? sanitize_textarea_field(wp_unslash($_POST['pu_message'])) : '';
+
+        $redirect_url = admin_url('admin.php?page=incr-project-updates');
+
+        if (trim($node_type) === '') {
+            wp_safe_redirect(add_query_arg('pu_notice', 'empty_node_type', $redirect_url));
+            exit;
+        }
+
+        if (trim($message) === '') {
+            wp_safe_redirect(add_query_arg('pu_notice', 'empty_message', $redirect_url));
+            exit;
+        }
+
+        // Get bot token
+        $token = '';
+        if (function_exists('incr_get_config')) {
+            $token = incr_get_config('INCR_TELEGRAM_BOT_TOKEN');
+        }
+        if ($token === '' && defined('INCR_TELEGRAM_BOT_TOKEN')) {
+            $token = INCR_TELEGRAM_BOT_TOKEN;
+        }
+        if ($token === '') {
+            $env_value = getenv('INCR_TELEGRAM_BOT_TOKEN');
+            if ($env_value !== false) {
+                $token = $env_value;
+            }
+        }
+
+        if (!$token) {
+            wp_safe_redirect(add_query_arg('pu_notice', 'no_token', $redirect_url));
+            exit;
+        }
+
+        // Get recipients
+        global $wpdb;
+        $nodes_table = $wpdb->prefix . 'incr_nodes';
+        $links_table = $wpdb->prefix . 'incr_telegram_links';
+
+        $chat_ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT DISTINCT l.telegram_chat_id
+             FROM {$nodes_table} n
+             INNER JOIN {$links_table} l ON l.wp_user_id = n.user_id
+             WHERE n.node_type = %s",
+            $node_type
+        ));
+
+        if (empty($chat_ids)) {
+            wp_safe_redirect(add_query_arg('pu_notice', 'no_recipients', $redirect_url));
+            exit;
+        }
+
+        // Send to all recipients
+        $sent_count = 0;
+        foreach ($chat_ids as $chat_id) {
+            if (self::send_tg_message($token, $chat_id, $message)) {
+                $sent_count++;
+            }
+        }
+
+        // Log
+        self::log_project_update($node_type, $message, $sent_count);
+
+        wp_safe_redirect(add_query_arg('pu_notice', 'sent_' . $sent_count, $redirect_url));
+        exit;
+    }
+
+    private static function log_project_update($node_type, $message, $recipients_count) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'incr_project_updates';
+
+        $wpdb->query("CREATE TABLE IF NOT EXISTS {$table} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            node_type VARCHAR(190) NOT NULL,
+            message TEXT NOT NULL,
+            recipients_count INT UNSIGNED NOT NULL DEFAULT 0,
+            sent_by BIGINT(20) UNSIGNED NOT NULL,
+            sent_at DATETIME NOT NULL,
+            PRIMARY KEY (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $wpdb->insert($table, [
+            'node_type'        => $node_type,
+            'message'          => $message,
+            'recipients_count' => $recipients_count,
+            'sent_by'          => get_current_user_id(),
+            'sent_at'          => current_time('mysql'),
         ]);
     }
 
