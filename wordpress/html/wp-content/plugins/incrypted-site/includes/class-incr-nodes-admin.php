@@ -1627,6 +1627,9 @@ class INCR_Nodes_Admin {
             return;
         }
 
+        // Notification Overview — summary table of all TG users
+        self::render_notification_overview();
+
         // Upcoming notifications section
         self::render_upcoming_notifications();
 
@@ -1723,6 +1726,109 @@ class INCR_Nodes_Admin {
         echo '</div>';
     }
 
+    private static function render_notification_overview() {
+        global $wpdb;
+        $links_table = $wpdb->prefix . 'incr_telegram_links';
+        $nodes_table = $wpdb->prefix . 'incr_nodes';
+        $notif_table = $wpdb->prefix . 'incr_telegram_notifications';
+
+        // Main query: one row per TG user with node stats
+        $users = $wpdb->get_results(
+            "SELECT
+                l.wp_user_id, u.display_name, u.user_email, l.tg_username,
+                COUNT(n.id) as total_nodes,
+                SUM(CASE WHEN n.due_date < NOW() THEN 1 ELSE 0 END) as overdue_count,
+                SUM(CASE WHEN n.due_date >= NOW() AND n.due_date <= NOW() + INTERVAL 72 HOUR THEN 1 ELSE 0 END) as expiring_72h,
+                MIN(CASE WHEN n.due_date >= NOW() THEN n.due_date END) as next_due
+            FROM {$links_table} l
+            INNER JOIN {$wpdb->users} u ON u.ID = l.wp_user_id
+            LEFT JOIN {$nodes_table} n ON n.user_id = l.wp_user_id AND n.due_date IS NOT NULL
+            GROUP BY l.wp_user_id
+            ORDER BY overdue_count DESC, next_due ASC",
+            ARRAY_A
+        );
+
+        // Batch query: pending notification count per user
+        $pending_rows = $wpdb->get_results(
+            "SELECT n.user_id, COUNT(*) as pending_count
+            FROM {$nodes_table} n
+            INNER JOIN {$links_table} l ON l.wp_user_id = n.user_id
+            WHERE n.due_date IS NOT NULL
+              AND n.due_date <= NOW() + INTERVAL 72 HOUR
+              AND NOT EXISTS (
+                  SELECT 1 FROM {$notif_table} tn
+                  WHERE tn.wp_user_id = n.user_id
+                    AND tn.node_id = n.node_id
+                    AND tn.notif_type = CASE
+                        WHEN n.due_date < NOW() THEN 'overdue'
+                        WHEN DATE(n.due_date) = CURDATE() THEN 'due_today'
+                        WHEN n.due_date <= NOW() + INTERVAL 24 HOUR THEN 'due_24h'
+                        ELSE 'due_72h'
+                    END
+              )
+            GROUP BY n.user_id",
+            ARRAY_A
+        );
+
+        $pending_map = [];
+        foreach ($pending_rows as $pr) {
+            $pending_map[(int) $pr['user_id']] = (int) $pr['pending_count'];
+        }
+
+        echo '<h2>Notification Overview</h2>';
+
+        if (empty($users)) {
+            echo '<p>No users with Telegram linked.</p>';
+            return;
+        }
+
+        echo '<table class="widefat fixed striped" style="margin-bottom:24px;">';
+        echo '<thead><tr>';
+        echo '<th>User</th>';
+        echo '<th>Email</th>';
+        echo '<th>Telegram</th>';
+        echo '<th style="text-align:center;">Total Nodes</th>';
+        echo '<th style="text-align:center;">Overdue</th>';
+        echo '<th style="text-align:center;">Expiring 72h</th>';
+        echo '<th>Next Due</th>';
+        echo '<th style="text-align:center;">Status</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ($users as $row) {
+            $uid = (int) $row['wp_user_id'];
+            $user_label = $row['display_name'] ?: ('User #' . $uid);
+            $profile_url = admin_url('user-edit.php?user_id=' . $uid);
+            $tg_display = $row['tg_username'] ? ('@' . $row['tg_username']) : '-';
+            $overdue = (int) $row['overdue_count'];
+            $expiring = (int) $row['expiring_72h'];
+            $total = (int) $row['total_nodes'];
+            $next_due = $row['next_due'] ?: '-';
+            $pending = isset($pending_map[$uid]) ? $pending_map[$uid] : 0;
+
+            // Status badge
+            if ($pending > 0) {
+                $status_html = '<span style="display:inline-block;padding:3px 10px;border-radius:3px;background:#dc3545;color:#fff;font-weight:600;font-size:12px;">Pending (' . $pending . ')</span>';
+            } elseif ($overdue > 0 || $expiring > 0) {
+                $status_html = '<span style="display:inline-block;padding:3px 10px;border-radius:3px;background:#28a745;color:#fff;font-weight:600;font-size:12px;">All sent</span>';
+            } else {
+                $status_html = '<span style="display:inline-block;padding:3px 10px;border-radius:3px;background:#999;color:#fff;font-weight:600;font-size:12px;">No expiring</span>';
+            }
+
+            echo '<tr>';
+            echo '<td><a href="' . esc_url($profile_url) . '">' . esc_html($user_label) . '</a></td>';
+            echo '<td>' . esc_html($row['user_email'] ?: '-') . '</td>';
+            echo '<td>' . esc_html($tg_display) . '</td>';
+            echo '<td style="text-align:center;">' . esc_html($total) . '</td>';
+            echo '<td style="text-align:center;' . ($overdue > 0 ? 'color:#dc3545;font-weight:bold;' : '') . '">' . esc_html($overdue) . '</td>';
+            echo '<td style="text-align:center;' . ($expiring > 0 ? 'color:#fd7e14;font-weight:bold;' : '') . '">' . esc_html($expiring) . '</td>';
+            echo '<td>' . esc_html($next_due) . '</td>';
+            echo '<td style="text-align:center;">' . $status_html . '</td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+    }
+
     private static function render_upcoming_notifications() {
         global $wpdb;
         $links_table = $wpdb->prefix . 'incr_telegram_links';
@@ -1798,9 +1904,16 @@ class INCR_Nodes_Admin {
 
         echo '<h2>Upcoming Notifications</h2>';
 
+        // Summary line
+        $user_ids = array_unique(array_column($upcoming, 'wp_user_id'));
+        $pending_count = count($upcoming);
+        $user_count = count($user_ids);
+
         if (empty($upcoming)) {
-            echo '<p>No pending notifications.</p>';
+            echo '<p style="color:#28a745;font-weight:600;">No pending notifications. All users are notified.</p>';
         } else {
+            echo '<p><strong>' . esc_html($pending_count) . ' pending notification' . ($pending_count !== 1 ? 's' : '') . '</strong> for <strong>' . esc_html($user_count) . ' user' . ($user_count !== 1 ? 's' : '') . '</strong></p>';
+
             // Group by type for summary
             $by_type = [];
             foreach ($upcoming as $row) {
