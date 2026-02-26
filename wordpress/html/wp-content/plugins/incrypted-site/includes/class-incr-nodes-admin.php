@@ -14,6 +14,8 @@ class INCR_Nodes_Admin {
         add_action('admin_post_incr_send_tg_message', [__CLASS__, 'handle_send_tg_message']);
         add_action('admin_post_incr_export_revenue', [__CLASS__, 'handle_export_revenue']);
         add_action('admin_post_incr_send_project_update', [__CLASS__, 'handle_send_project_update']);
+        add_action('edit_user_profile', [__CLASS__, 'render_user_profile_section']);
+        add_action('show_user_profile', [__CLASS__, 'render_user_profile_section']);
 
         // Schedule twice daily sync if not already scheduled
         if (!wp_next_scheduled('incr_sync_all_nodes_job')) {
@@ -2409,6 +2411,170 @@ class INCR_Nodes_Admin {
             'sent_by'          => get_current_user_id(),
             'sent_at'          => current_time('mysql'),
         ]);
+    }
+
+    public static function render_user_profile_section($user) {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $nodes = class_exists('INCR_Nodes_Store') ? INCR_Nodes_Store::get_nodes_by_user($user->ID) : [];
+        $overdue_count = class_exists('INCR_Nodes_Store') ? INCR_Nodes_Store::get_overdue_count($user->ID) : 0;
+
+        $orders = [];
+        $total_spent = 0;
+        if (function_exists('wc_get_orders')) {
+            $orders = wc_get_orders([
+                'customer_id' => $user->ID,
+                'limit'       => 20,
+                'orderby'     => 'date',
+                'order'       => 'DESC',
+                'status'      => ['wc-completed', 'wc-processing', 'wc-on-hold', 'wc-pending'],
+            ]);
+            foreach ($orders as $order) {
+                $total_spent += (float) $order->get_total();
+            }
+        }
+
+        $today = current_time('Y-m-d');
+        ?>
+        <h2>NodesPlus</h2>
+        <style>
+            .np-profile-cards { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+            .np-profile-card { background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 12px 20px; min-width: 120px; }
+            .np-profile-card__value { font-size: 24px; font-weight: 600; line-height: 1.2; }
+            .np-profile-card__label { font-size: 12px; color: #646970; text-transform: uppercase; }
+            .np-profile-card--danger .np-profile-card__value { color: #d63638; }
+            .np-profile-table { border-collapse: collapse; width: 100%; }
+            .np-profile-table th, .np-profile-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+            .np-profile-table th { font-weight: 600; background: #f6f7f7; }
+            .np-profile-table tr.np-row-overdue td { color: #d63638; }
+            .np-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 500; line-height: 1.4; }
+            .np-badge--purchase { background: #e7f0ff; color: #2271b1; }
+            .np-badge--prolongation { background: #fef0e5; color: #c45a00; }
+            .np-badge--overdue { background: #fcecec; color: #d63638; }
+            .np-badge--active { background: #edfaef; color: #1a7a2e; }
+        </style>
+
+        <div class="np-profile-cards">
+            <div class="np-profile-card">
+                <div class="np-profile-card__value"><?php echo count($nodes); ?></div>
+                <div class="np-profile-card__label">Total Nodes</div>
+            </div>
+            <div class="np-profile-card<?php echo $overdue_count > 0 ? ' np-profile-card--danger' : ''; ?>">
+                <div class="np-profile-card__value"><?php echo $overdue_count; ?></div>
+                <div class="np-profile-card__label">Overdue</div>
+            </div>
+            <div class="np-profile-card">
+                <div class="np-profile-card__value"><?php echo count($orders); ?></div>
+                <div class="np-profile-card__label">Total Orders</div>
+            </div>
+            <div class="np-profile-card">
+                <div class="np-profile-card__value">$<?php echo number_format($total_spent, 2); ?></div>
+                <div class="np-profile-card__label">Total Spent</div>
+            </div>
+        </div>
+
+        <h3>Nodes</h3>
+        <?php if (empty($nodes)) : ?>
+            <p>No nodes found.</p>
+        <?php else : ?>
+            <table class="np-profile-table widefat">
+                <thead>
+                    <tr>
+                        <th>Node ID</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Due Date</th>
+                        <th>Days Left</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($nodes as $node) :
+                        $due = $node['due_date'] ? substr($node['due_date'], 0, 10) : null;
+                        $is_overdue = $due && $due < $today;
+                        $days_left = $due ? (int) ((strtotime($due) - strtotime($today)) / 86400) : null;
+                        $status_label = $due ? ($is_overdue ? 'Overdue' : 'Active') : 'Unknown';
+                        $badge_class = $is_overdue ? 'np-badge--overdue' : 'np-badge--active';
+                    ?>
+                        <tr class="<?php echo $is_overdue ? 'np-row-overdue' : ''; ?>">
+                            <td><?php echo esc_html($node['node_id']); ?></td>
+                            <td><?php echo esc_html($node['node_type'] ?: '-'); ?></td>
+                            <td><span class="np-badge <?php echo esc_attr($badge_class); ?>"><?php echo esc_html($status_label); ?></span></td>
+                            <td><?php echo esc_html($node['created_at'] ? substr($node['created_at'], 0, 10) : '-'); ?></td>
+                            <td><?php echo esc_html($due ?: '-'); ?></td>
+                            <td><?php
+                                if ($days_left === null) {
+                                    echo '-';
+                                } elseif ($days_left > 0) {
+                                    echo esc_html($days_left . 'd');
+                                } elseif ($days_left === 0) {
+                                    echo 'Today';
+                                } else {
+                                    echo esc_html(abs($days_left) . 'd overdue');
+                                }
+                            ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php
+            $dashboard_url = add_query_arg(['page' => 'incr-nodes-dashboard', 'user_id' => $user->ID], admin_url('admin.php'));
+            echo '<p><a href="' . esc_url($dashboard_url) . '">View in Nodes Dashboard &rarr;</a></p>';
+            ?>
+        <?php endif; ?>
+
+        <h3>Order History</h3>
+        <?php if (empty($orders)) : ?>
+            <p>No orders found.</p>
+        <?php else : ?>
+            <table class="np-profile-table widefat">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($orders as $order) :
+                        $order_id = $order->get_id();
+                        $order_url = admin_url('post.php?post=' . $order_id . '&action=edit');
+                        $items = $order->get_items();
+                        $item_names = [];
+                        $op_types = [];
+                        foreach ($items as $item) {
+                            $item_names[] = $item->get_name();
+                            $op = $item->get_meta('Operation Type');
+                            if ($op && !in_array($op, $op_types, true)) {
+                                $op_types[] = $op;
+                            }
+                        }
+                        if (empty($op_types)) {
+                            $op_types[] = 'Purchase';
+                        }
+                    ?>
+                        <tr>
+                            <td><a href="<?php echo esc_url($order_url); ?>">#<?php echo esc_html($order_id); ?></a></td>
+                            <td><?php echo esc_html($order->get_date_created() ? $order->get_date_created()->date('Y-m-d') : '-'); ?></td>
+                            <td><?php echo esc_html(wc_get_order_status_name($order->get_status())); ?></td>
+                            <td><?php echo esc_html(implode(', ', $item_names) ?: '-'); ?></td>
+                            <td>$<?php echo esc_html(number_format((float) $order->get_total(), 2)); ?></td>
+                            <td><?php
+                                foreach ($op_types as $op_type) {
+                                    $badge = $op_type === 'Prolongation' ? 'np-badge--prolongation' : 'np-badge--purchase';
+                                    echo '<span class="np-badge ' . esc_attr($badge) . '">' . esc_html($op_type) . '</span> ';
+                                }
+                            ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif;
     }
 
 }
