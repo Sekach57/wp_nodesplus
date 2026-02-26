@@ -16,16 +16,22 @@ function proceed_paid_order($order_id): void
     }
 
     $nodes = [];
-    $is_prolongation = false;
+    $is_all_prolongation = true;
+    $has_prolongation = false;
 
     foreach ($order->get_items() as $item) {
         $product_name = get_field('acf_node_name', $item->get_product_id());
         $product_name = strtolower(trim($product_name));
 
         $quantity = $item->get_quantity();
-        $is_prolongation = $item->get_meta('Is Prolongation') === 'yes';
+        $item_is_prolongation = $item->get_meta('Is Prolongation') === 'yes';
+        if ($item_is_prolongation) {
+            $has_prolongation = true;
+        } else {
+            $is_all_prolongation = false;
+        }
 
-        if ($is_prolongation) {
+        if ($item_is_prolongation) {
             $node_id = $item->get_meta('Node ID');
 
             $node_data = [
@@ -48,7 +54,7 @@ function proceed_paid_order($order_id): void
             'client_id' => $user_id . "",
             'order_id' => $order_id . "",
             'nodes' => $nodes,
-            'prolongation' => $is_prolongation,
+            'prolongation' => $has_prolongation,
         ]
     ];
 
@@ -61,7 +67,23 @@ function proceed_paid_order($order_id): void
     //     $request_url = defined('INCR_IMPORT_URL_DEV') ? INCR_IMPORT_URL_DEV : '';
     // }
     makeRequest("POST", $request_url, $data);
+
+    // Auto-complete if ALL items are prolongation
+    if ($is_all_prolongation && count($nodes) > 0) {
+        $order->update_meta_data('_np_auto_completed', '1');
+        $order->save_meta_data();
+        $order->add_order_note('Order auto-completed: all items are prolongation (due dates updated via API).');
+        $order->update_status('completed', '', true);
+    }
 }
+
+// Suppress 'Completed order' email for auto-completed prolongation orders
+add_filter('woocommerce_email_enabled_customer_completed_order', function($enabled, $order) {
+    if ($order && $order->get_meta('_np_auto_completed') === '1') {
+        return false;
+    }
+    return $enabled;
+}, 10, 2);
 
 function getNodesByUserID($user_id, $trigger_call = false){
     // if ($trigger_call) {
