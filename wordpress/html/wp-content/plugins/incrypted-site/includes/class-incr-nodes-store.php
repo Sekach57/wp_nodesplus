@@ -31,6 +31,7 @@ class INCR_Nodes_Store {
             source VARCHAR(32) NOT NULL DEFAULT 'api',
             synced_at DATETIME NOT NULL,
             is_archived TINYINT(1) NOT NULL DEFAULT 0,
+            archived_at DATETIME NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY uniq_user_node (user_id, node_id),
             KEY user_id (user_id),
@@ -52,6 +53,13 @@ class INCR_Nodes_Store {
         ));
         if (!$col) {
             $wpdb->query("ALTER TABLE {$table} ADD COLUMN is_archived TINYINT(1) NOT NULL DEFAULT 0, ADD KEY is_archived (is_archived)");
+        }
+        $col2 = $wpdb->get_var($wpdb->prepare(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'archived_at'",
+            $table
+        ));
+        if (!$col2) {
+            $wpdb->query("ALTER TABLE {$table} ADD COLUMN archived_at DATETIME NULL AFTER is_archived");
         }
     }
 
@@ -137,7 +145,8 @@ class INCR_Nodes_Store {
         // Archive nodes for this user that were not in the current API response
         if ($count > 0 && $source === 'api') {
             $wpdb->query($wpdb->prepare(
-                "UPDATE {$table} SET is_archived = 1 WHERE user_id = %d AND synced_at < %s AND is_archived = 0",
+                "UPDATE {$table} SET is_archived = 1, archived_at = %s WHERE user_id = %d AND synced_at < %s AND is_archived = 0",
+                $synced_at,
                 $user_id,
                 $synced_at
             ));
@@ -221,7 +230,11 @@ class INCR_Nodes_Store {
 
         if (!empty($args['status'])) {
             $today = current_time('Y-m-d');
-            if ($args['status'] === 'overdue') {
+            if ($args['status'] === 'archived') {
+                // Override archive filter — show only archived
+                $where = array_filter($where, function($w) { return $w !== 'is_archived = 0'; });
+                $where[] = 'is_archived = 1';
+            } elseif ($args['status'] === 'overdue') {
                 $where[] = 'due_date IS NOT NULL AND DATE(due_date) < %s';
                 $params[] = $today;
             } elseif ($args['status'] === 'active') {

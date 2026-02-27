@@ -1297,7 +1297,7 @@ class INCR_Nodes_Admin {
         }
         echo '</select></label>';
         echo '<label>Status<br><select name="status">';
-        $status_options = ['' => 'All', 'active' => 'Active', 'overdue' => 'Overdue'];
+        $status_options = ['' => 'All', 'active' => 'Active', 'overdue' => 'Overdue', 'archived' => 'Archived'];
         foreach ($status_options as $value => $label) {
             $selected = $filters['status'] === $value ? ' selected' : '';
             echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . esc_html($label) . '</option>';
@@ -1445,8 +1445,11 @@ class INCR_Nodes_Admin {
             $user_cache = [];
             foreach ($items as $row) {
                 $due_date = isset($row['due_date']) ? $row['due_date'] : '';
+                $is_archived = !empty($row['is_archived']);
                 $status = '—';
-                if (!empty($due_date)) {
+                if ($is_archived) {
+                    $status = 'archived';
+                } elseif (!empty($due_date)) {
                     $status = (substr($due_date, 0, 10) < $today) ? 'overdue' : 'active';
                 }
 

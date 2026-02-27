@@ -82,11 +82,12 @@ class INCR_Nodes_Report {
 
     private static function render_summary_cards($stats) {
         $cards = [
-            ['label' => 'Total',    'value' => $stats['total'] ?? 0,    'color' => '#2271b1'],
-            ['label' => 'Active',   'value' => $stats['active'] ?? 0,   'color' => '#00a32a'],
-            ['label' => 'Overdue',  'value' => $stats['overdue'] ?? 0,  'color' => '#d63638'],
-            ['label' => 'New (30d)','value' => $stats['new_30d'] ?? 0,  'color' => '#dba617'],
-            ['label' => 'Renewals', 'value' => $stats['renewals'] ?? 0, 'color' => '#8c5dcc'],
+            ['label' => 'Current Nodes', 'value' => $stats['total'] ?? 0,          'color' => '#2271b1'],
+            ['label' => 'Active',        'value' => $stats['active'] ?? 0,         'color' => '#00a32a'],
+            ['label' => 'Overdue',       'value' => $stats['overdue'] ?? 0,        'color' => '#d63638'],
+            ['label' => 'Cancelled (mo)','value' => $stats['archived_month'] ?? 0, 'color' => '#996800'],
+            ['label' => 'New (30d)',     'value' => $stats['new_30d'] ?? 0,        'color' => '#dba617'],
+            ['label' => 'Renewals',      'value' => $stats['renewals'] ?? 0,       'color' => '#8c5dcc'],
         ];
 
         echo '<div style="display:flex;gap:12px;flex-wrap:wrap;margin:20px 0;">';
@@ -197,6 +198,7 @@ class INCR_Nodes_Report {
         }
 
         $stats = self::build_statistics($all_nodes);
+        $stats['archived_month'] = self::count_archived_this_month();
 
         return [
             'stats'        => $stats,
@@ -269,6 +271,16 @@ class INCR_Nodes_Report {
         ];
     }
 
+    private static function count_archived_this_month() {
+        global $wpdb;
+        $table = INCR_Nodes_Store::table_name();
+        $month_start = date('Y-m-01 00:00:00');
+        return (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} WHERE is_archived = 1 AND archived_at >= %s",
+            $month_start
+        ));
+    }
+
     // -------------------------------------------------------------------------
     //  Handlers
     // -------------------------------------------------------------------------
@@ -329,9 +341,10 @@ class INCR_Nodes_Report {
         // Summary section
         fputcsv($output, ['=== SUMMARY ===']);
         fputcsv($output, ['Metric', 'Value']);
-        fputcsv($output, ['Total Nodes', $stats['total'] ?? 0]);
+        fputcsv($output, ['Current Nodes', $stats['total'] ?? 0]);
         fputcsv($output, ['Active', $stats['active'] ?? 0]);
         fputcsv($output, ['Overdue', $stats['overdue'] ?? 0]);
+        fputcsv($output, ['Cancelled This Month', $stats['archived_month'] ?? 0]);
         fputcsv($output, ['New (30 days)', $stats['new_30d'] ?? 0]);
         fputcsv($output, ['Renewals', $stats['renewals'] ?? 0]);
         fputcsv($output, ['Generated', $data['generated_at'] ?? '']);
@@ -428,9 +441,10 @@ class INCR_Nodes_Report {
         $xml .= self::excel_row([]);
 
         $xml .= self::excel_row(['Metric', 'Value'], 'Header');
-        $xml .= self::excel_row(['Total Nodes', $stats['total'] ?? 0], '', [false, true]);
+        $xml .= self::excel_row(['Current Nodes', $stats['total'] ?? 0], '', [false, true]);
         $xml .= self::excel_row(['Active', $stats['active'] ?? 0], '', [false, true]);
         $xml .= self::excel_row(['Overdue', $stats['overdue'] ?? 0], '', [false, true]);
+        $xml .= self::excel_row(['Cancelled This Month', $stats['archived_month'] ?? 0], '', [false, true]);
         $xml .= self::excel_row(['New (30 days)', $stats['new_30d'] ?? 0], '', [false, true]);
         $xml .= self::excel_row(['Renewals', $stats['renewals'] ?? 0], '', [false, true]);
         $xml .= self::excel_row([]);
