@@ -180,6 +180,9 @@ class INCR_Nodes_Admin {
             if (class_exists('INCR_Nodes_Store')) {
                 if (is_array($nodes) && !isset($nodes['detail'])) {
                     INCR_Nodes_Store::upsert_nodes((int) $user_id, $nodes, 'api');
+                } elseif (is_array($nodes) && isset($nodes['detail'])) {
+                    // API says no nodes — archive all existing nodes for this user
+                    INCR_Nodes_Store::archive_all_user_nodes((int) $user_id);
                 }
                 $db_rows += count(INCR_Nodes_Store::get_nodes_by_user((int) $user_id));
             }

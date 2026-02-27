@@ -155,6 +155,20 @@ class INCR_Nodes_Store {
         return $count;
     }
 
+    public static function archive_all_user_nodes($user_id) {
+        global $wpdb;
+        $table = self::table_name();
+        $user_id = (int) $user_id;
+        if ($user_id <= 0) {
+            return 0;
+        }
+        return $wpdb->query($wpdb->prepare(
+            "UPDATE {$table} SET is_archived = 1, archived_at = %s WHERE user_id = %d AND is_archived = 0",
+            current_time('mysql'),
+            $user_id
+        ));
+    }
+
     public static function get_nodes_by_user($user_id) {
         global $wpdb;
         $table = self::table_name();
