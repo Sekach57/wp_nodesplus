@@ -25,6 +25,13 @@ require_once INCR_SITE_PLUGIN_DIR . 'includes/class-incr-telegram-notifications.
 
 add_action( 'admin_notices', 'incr_config_admin_notice' );
 
+// Ensure DB columns are up to date (runs once, checks via INFORMATION_SCHEMA)
+add_action( 'admin_init', function() {
+    if ( class_exists( 'INCR_Nodes_Store' ) ) {
+        INCR_Nodes_Store::ensure_columns();
+    }
+});
+
 function incr_nodes_store_activate() {
     if ( class_exists( 'INCR_Nodes_Store' ) ) {
         INCR_Nodes_Store::create_table();

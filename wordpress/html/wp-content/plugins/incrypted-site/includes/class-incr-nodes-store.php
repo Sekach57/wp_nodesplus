@@ -30,14 +30,29 @@ class INCR_Nodes_Store {
             raw_payload LONGTEXT NULL,
             source VARCHAR(32) NOT NULL DEFAULT 'api',
             synced_at DATETIME NOT NULL,
+            is_archived TINYINT(1) NOT NULL DEFAULT 0,
             PRIMARY KEY  (id),
             UNIQUE KEY uniq_user_node (user_id, node_id),
             KEY user_id (user_id),
-            KEY node_id (node_id)
+            KEY node_id (node_id),
+            KEY is_archived (is_archived)
         ) {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
+        self::ensure_columns();
+    }
+
+    public static function ensure_columns() {
+        global $wpdb;
+        $table = self::table_name();
+        $col = $wpdb->get_var($wpdb->prepare(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'is_archived'",
+            $table
+        ));
+        if (!$col) {
+            $wpdb->query("ALTER TABLE {$table} ADD COLUMN is_archived TINYINT(1) NOT NULL DEFAULT 0, ADD KEY is_archived (is_archived)");
+        }
     }
 
     public static function upsert_nodes($user_id, array $nodes, $source = 'api') {
@@ -90,6 +105,7 @@ class INCR_Nodes_Store {
                     'raw_payload' => wp_json_encode($node),
                     'source' => $source,
                     'synced_at' => $synced_at,
+                    'is_archived' => 0,
                 ],
                 [
                     '%d',
@@ -104,6 +120,7 @@ class INCR_Nodes_Store {
                     '%s',
                     '%s',
                     '%s',
+                    '%d',
                 ]
             );
 
@@ -115,6 +132,15 @@ class INCR_Nodes_Store {
                     error_log('INCR_Nodes_Store upsert failed: ' . $error);
                 }
             }
+        }
+
+        // Archive nodes for this user that were not in the current API response
+        if ($count > 0 && $source === 'api') {
+            $wpdb->query($wpdb->prepare(
+                "UPDATE {$table} SET is_archived = 1 WHERE user_id = %d AND synced_at < %s AND is_archived = 0",
+                $user_id,
+                $synced_at
+            ));
         }
 
         return $count;
@@ -129,7 +155,7 @@ class INCR_Nodes_Store {
         }
 
         $sql = $wpdb->prepare(
-            "SELECT * FROM {$table} WHERE user_id = %d ORDER BY due_date IS NULL, due_date ASC",
+            "SELECT * FROM {$table} WHERE user_id = %d AND is_archived = 0 ORDER BY due_date IS NULL, due_date ASC",
             $user_id
         );
 
@@ -146,7 +172,7 @@ class INCR_Nodes_Store {
 
         $now = current_time('mysql');
         $sql = $wpdb->prepare(
-            "SELECT COUNT(*) FROM {$table} WHERE user_id = %d AND due_date IS NOT NULL AND due_date <= %s",
+            "SELECT COUNT(*) FROM {$table} WHERE user_id = %d AND is_archived = 0 AND due_date IS NOT NULL AND due_date <= %s",
             $user_id,
             $now
         );
@@ -166,6 +192,8 @@ class INCR_Nodes_Store {
             'node_type' => null,
             'search' => null,
             'overdue_only' => false,
+            'include_archived' => false,
+            'archived_only' => false,
             'due_date_from' => null,
             'due_date_to' => null,
             'orderby' => 'due_date',
@@ -179,6 +207,12 @@ class INCR_Nodes_Store {
 
         $where = [];
         $params = [];
+
+        if (!empty($args['archived_only'])) {
+            $where[] = 'is_archived = 1';
+        } elseif (empty($args['include_archived'])) {
+            $where[] = 'is_archived = 0';
+        }
 
         if (!empty($args['user_id'])) {
             $where[] = 'user_id = %d';
@@ -274,7 +308,7 @@ class INCR_Nodes_Store {
             'due_date_to' => null,
         ]);
 
-        $where = [];
+        $where = ['is_archived = 0'];
         $params = [];
 
         if (!empty($args['user_id'])) {
@@ -335,7 +369,7 @@ class INCR_Nodes_Store {
             'due_date_to' => null,
         ]);
 
-        $where = [];
+        $where = ['is_archived = 0'];
         $params = [];
 
         if (!empty($args['user_id'])) {
@@ -388,7 +422,7 @@ class INCR_Nodes_Store {
         $end = date('Y-m-d', strtotime("+{$days} days", strtotime($today)));
 
         return (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$table} WHERE due_date IS NOT NULL AND DATE(due_date) >= %s AND DATE(due_date) <= %s",
+            "SELECT COUNT(*) FROM {$table} WHERE is_archived = 0 AND due_date IS NOT NULL AND DATE(due_date) >= %s AND DATE(due_date) <= %s",
             $today,
             $end
         ));
@@ -398,13 +432,13 @@ class INCR_Nodes_Store {
         global $wpdb;
         $table = self::table_name();
 
-        return (int) $wpdb->get_var("SELECT COUNT(DISTINCT user_id) FROM {$table}");
+        return (int) $wpdb->get_var("SELECT COUNT(DISTINCT user_id) FROM {$table} WHERE is_archived = 0");
     }
 
     public static function get_distinct_node_types() {
         global $wpdb;
         $table = self::table_name();
-        $sql = "SELECT DISTINCT node_type FROM {$table} WHERE node_type <> '' ORDER BY node_type ASC";
+        $sql = "SELECT DISTINCT node_type FROM {$table} WHERE is_archived = 0 AND node_type <> '' ORDER BY node_type ASC";
         return $wpdb->get_col($sql);
     }
 
