@@ -81,6 +81,14 @@ class INCR_Nodes_Admin {
             'incr-project-updates',
             [__CLASS__, 'render_project_updates']
         );
+        add_submenu_page(
+            'incr-nodes-overview',
+            'Report',
+            'Report',
+            'manage_options',
+            'incr-nodes-report',
+            ['INCR_Nodes_Report', 'render_report']
+        );
     }
 
     public static function handle_refresh_user_nodes() {

@@ -20,6 +20,7 @@ require_once INCR_SITE_PLUGIN_DIR . 'includes/class-incr-nodes-admin.php';
 require_once INCR_SITE_PLUGIN_DIR . 'includes/class-incr-discounts-admin.php';
 require_once INCR_SITE_PLUGIN_DIR . 'includes/class-incr-telegram-connect.php';
 require_once INCR_SITE_PLUGIN_DIR . 'includes/class-incr-telegram-links.php';
+require_once INCR_SITE_PLUGIN_DIR . 'includes/class-incr-nodes-report.php';
 require_once INCR_SITE_PLUGIN_DIR . 'includes/class-incr-telegram-notifications.php';
 
 add_action( 'admin_notices', 'incr_config_admin_notice' );
@@ -60,4 +61,7 @@ if ( class_exists( 'INCR_Telegram_Notifications' ) ) {
 }
 if ( class_exists( 'INCR_Discounts_Admin' ) ) {
     INCR_Discounts_Admin::init();
+}
+if ( class_exists( 'INCR_Nodes_Report' ) ) {
+    INCR_Nodes_Report::init();
 }
