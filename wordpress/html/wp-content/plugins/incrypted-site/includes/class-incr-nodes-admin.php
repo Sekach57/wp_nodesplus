@@ -14,6 +14,8 @@ class INCR_Nodes_Admin {
         add_action('admin_post_incr_send_tg_message', [__CLASS__, 'handle_send_tg_message']);
         add_action('admin_post_incr_export_revenue', [__CLASS__, 'handle_export_revenue']);
         add_action('admin_post_incr_send_project_update', [__CLASS__, 'handle_send_project_update']);
+        add_action('admin_post_incr_save_test_nodes', [__CLASS__, 'handle_save_test_nodes']);
+        add_action('admin_post_incr_clear_test_nodes', [__CLASS__, 'handle_clear_test_nodes']);
         add_action('edit_user_profile', [__CLASS__, 'render_user_profile_section']);
         add_action('show_user_profile', [__CLASS__, 'render_user_profile_section']);
 
@@ -88,6 +90,14 @@ class INCR_Nodes_Admin {
             'manage_options',
             'incr-nodes-report',
             ['INCR_Nodes_Report', 'render_report']
+        );
+        add_submenu_page(
+            'incr-nodes-overview',
+            'Test Nodes',
+            'Test Nodes',
+            'manage_options',
+            'incr-test-nodes',
+            [__CLASS__, 'render_test_nodes']
         );
     }
 
@@ -2589,6 +2599,206 @@ class INCR_Nodes_Admin {
                 </tbody>
             </table>
         <?php endif;
+    }
+
+    /* ───────────────────────────────────────────────
+     *  Test Nodes — demo nodes via transient override
+     * ─────────────────────────────────────────────── */
+
+    public static function handle_save_test_nodes() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
+        }
+        check_admin_referer('incr_test_nodes', 'incr_test_nodes_nonce');
+
+        $user_id = absint($_POST['test_user_id'] ?? 0);
+        if (!$user_id || !get_userdata($user_id)) {
+            wp_die('Invalid User ID');
+        }
+
+        $types   = array_map('sanitize_text_field', $_POST['node_type'] ?? []);
+        $dates   = array_map('sanitize_text_field', $_POST['due_date'] ?? []);
+        $prices  = array_map('sanitize_text_field', $_POST['price'] ?? []);
+        $periods = array_map('sanitize_text_field', $_POST['billing_period'] ?? []);
+
+        $nodes = [];
+        foreach ($types as $i => $type) {
+            if (empty($type)) continue;
+            $due = !empty($dates[$i]) ? $dates[$i] . 'T00:00:00' : date('Y-m-d', strtotime('+30 days')) . 'T00:00:00';
+            $nodes[] = [
+                'id'                => 'test-' . wp_generate_uuid4(),
+                'node_type'         => $type,
+                'client_id'         => (string) $user_id,
+                'created_at'        => date('c', strtotime('-30 days')),
+                'due_date'          => $due,
+                'price'             => number_format((float)($prices[$i] ?? 50), 2, '.', ''),
+                'billing_period'    => !empty($periods[$i]) ? $periods[$i] : '1 month',
+                'billing_status'    => 'active',
+                'status'            => [
+                    'data'       => ['status' => 'Running', 'uptime' => 'up 2 weeks'],
+                    'created_at' => date('c'),
+                ],
+                'additional_fields' => [],
+            ];
+        }
+
+        if (empty($nodes)) {
+            wp_die('No nodes provided');
+        }
+
+        set_transient('Incr_user_nodes_' . $user_id, $nodes, 3600);
+
+        wp_redirect(add_query_arg([
+            'page'    => 'incr-test-nodes',
+            'saved'   => $user_id,
+            'count'   => count($nodes),
+        ], admin_url('admin.php')));
+        exit;
+    }
+
+    public static function handle_clear_test_nodes() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
+        }
+        check_admin_referer('incr_test_nodes', 'incr_test_nodes_nonce');
+
+        $user_id = absint($_POST['test_user_id'] ?? 0);
+        if ($user_id) {
+            delete_transient('Incr_user_nodes_' . $user_id);
+        }
+
+        wp_redirect(add_query_arg([
+            'page'    => 'incr-test-nodes',
+            'cleared' => $user_id,
+        ], admin_url('admin.php')));
+        exit;
+    }
+
+    public static function render_test_nodes() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
+        }
+
+        $node_types = [];
+        if (class_exists('INCR_Nodes_Store')) {
+            $node_types = INCR_Nodes_Store::get_distinct_node_types();
+        }
+        if (empty($node_types)) {
+            $node_types = ['gensyn', 'pipe', 'nexus', 'ritual', 'allora', 'nillion'];
+        }
+
+        $saved_user   = absint($_GET['saved'] ?? 0);
+        $saved_count  = absint($_GET['count'] ?? 0);
+        $cleared_user = absint($_GET['cleared'] ?? 0);
+        ?>
+        <div class="wrap">
+            <h1>Test Nodes</h1>
+            <p>Create temporary test nodes for a user. Nodes are stored as a transient (1 hour) and override real API data.</p>
+
+            <?php if ($saved_user): ?>
+                <div class="notice notice-success is-dismissible">
+                    <p>Test nodes active for user #<?php echo esc_html($saved_user); ?> (<?php echo esc_html($saved_count); ?> nodes, auto-clears in 1h)</p>
+                </div>
+            <?php endif; ?>
+            <?php if ($cleared_user): ?>
+                <div class="notice notice-info is-dismissible">
+                    <p>Test nodes cleared for user #<?php echo esc_html($cleared_user); ?>. Real data restored.</p>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" id="incr-test-nodes-form">
+                <?php wp_nonce_field('incr_test_nodes', 'incr_test_nodes_nonce'); ?>
+
+                <table class="form-table">
+                    <tr>
+                        <th><label for="test_user_id">User ID</label></th>
+                        <td><input type="number" name="test_user_id" id="test_user_id" min="1" required
+                                   value="<?php echo esc_attr($saved_user ?: ''); ?>"
+                                   class="regular-text" style="width:120px"></td>
+                    </tr>
+                </table>
+
+                <h2>Nodes</h2>
+                <table class="widefat striped" id="incr-test-nodes-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Type</th>
+                            <th>Due Date</th>
+                            <th>Price ($)</th>
+                            <th>Billing Period</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="incr-test-nodes-tbody">
+                        <tr class="incr-test-node-row">
+                            <td class="incr-row-num">1</td>
+                            <td>
+                                <select name="node_type[]">
+                                    <?php foreach ($node_types as $t): ?>
+                                        <option value="<?php echo esc_attr($t); ?>"><?php echo esc_html($t); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                            <td><input type="date" name="due_date[]" value="<?php echo esc_attr(date('Y-m-d', strtotime('+30 days'))); ?>"></td>
+                            <td><input type="number" name="price[]" value="50" min="0" step="0.01" style="width:80px"></td>
+                            <td>
+                                <select name="billing_period[]">
+                                    <option value="1 month">1 month</option>
+                                    <option value="3 months">3 months</option>
+                                    <option value="6 months">6 months</option>
+                                    <option value="12 months">12 months</option>
+                                </select>
+                            </td>
+                            <td><button type="button" class="button incr-remove-row" title="Remove">&times;</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>
+                    <button type="button" class="button" id="incr-add-node-row">+ Add Node</button>
+                </p>
+
+                <p class="submit">
+                    <button type="submit" formaction="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                            name="action" value="incr_save_test_nodes" class="button button-primary">Save Test Nodes</button>
+                    &nbsp;
+                    <button type="submit" formaction="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                            name="action" value="incr_clear_test_nodes" class="button">Clear Test Nodes for User</button>
+                </p>
+            </form>
+        </div>
+
+        <script>
+        (function(){
+            var tbody = document.getElementById('incr-test-nodes-tbody');
+            var addBtn = document.getElementById('incr-add-node-row');
+
+            function renumber() {
+                var rows = tbody.querySelectorAll('.incr-test-node-row');
+                rows.forEach(function(row, i) {
+                    row.querySelector('.incr-row-num').textContent = i + 1;
+                });
+            }
+
+            addBtn.addEventListener('click', function() {
+                var first = tbody.querySelector('.incr-test-node-row');
+                var clone = first.cloneNode(true);
+                tbody.appendChild(clone);
+                renumber();
+            });
+
+            tbody.addEventListener('click', function(e) {
+                if (e.target.classList.contains('incr-remove-row')) {
+                    if (tbody.querySelectorAll('.incr-test-node-row').length > 1) {
+                        e.target.closest('.incr-test-node-row').remove();
+                        renumber();
+                    }
+                }
+            });
+        })();
+        </script>
+        <?php
     }
 
 }
