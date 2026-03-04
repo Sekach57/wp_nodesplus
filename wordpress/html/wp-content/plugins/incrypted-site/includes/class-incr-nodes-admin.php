@@ -16,6 +16,7 @@ class INCR_Nodes_Admin {
         add_action('admin_post_incr_send_project_update', [__CLASS__, 'handle_send_project_update']);
         add_action('admin_post_incr_save_test_nodes', [__CLASS__, 'handle_save_test_nodes']);
         add_action('admin_post_incr_clear_test_nodes', [__CLASS__, 'handle_clear_test_nodes']);
+        add_action('wp_ajax_incr_lookup_user_by_email', [__CLASS__, 'ajax_lookup_user_by_email']);
         add_action('edit_user_profile', [__CLASS__, 'render_user_profile_section']);
         add_action('show_user_profile', [__CLASS__, 'render_user_profile_section']);
 
@@ -2605,6 +2606,21 @@ class INCR_Nodes_Admin {
      *  Test Nodes — demo nodes via transient override
      * ─────────────────────────────────────────────── */
 
+    public static function ajax_lookup_user_by_email() {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Access denied');
+        }
+        $email = sanitize_email($_GET['email'] ?? '');
+        if (!$email) {
+            wp_send_json_error('No email');
+        }
+        $user = get_user_by('email', $email);
+        if ($user) {
+            wp_send_json_success(['user_id' => $user->ID, 'display' => $user->display_name . ' (#' . $user->ID . ')']);
+        }
+        wp_send_json_error('User not found');
+    }
+
     public static function handle_save_test_nodes() {
         if (!current_user_can('manage_options')) {
             wp_die('Access denied');
@@ -2612,8 +2628,13 @@ class INCR_Nodes_Admin {
         check_admin_referer('incr_test_nodes', 'incr_test_nodes_nonce');
 
         $user_id = absint($_POST['test_user_id'] ?? 0);
+        $email   = sanitize_email($_POST['test_user_email'] ?? '');
+        if (!$user_id && $email) {
+            $user = get_user_by('email', $email);
+            if ($user) $user_id = $user->ID;
+        }
         if (!$user_id || !get_userdata($user_id)) {
-            wp_die('Invalid User ID');
+            wp_die('Invalid User ID or Email');
         }
 
         $types   = array_map('sanitize_text_field', $_POST['node_type'] ?? []);
@@ -2663,6 +2684,11 @@ class INCR_Nodes_Admin {
         check_admin_referer('incr_test_nodes', 'incr_test_nodes_nonce');
 
         $user_id = absint($_POST['test_user_id'] ?? 0);
+        $email   = sanitize_email($_POST['test_user_email'] ?? '');
+        if (!$user_id && $email) {
+            $user = get_user_by('email', $email);
+            if ($user) $user_id = $user->ID;
+        }
         if ($user_id) {
             delete_transient('Incr_user_nodes_' . $user_id);
         }
@@ -2711,8 +2737,17 @@ class INCR_Nodes_Admin {
 
                 <table class="form-table">
                     <tr>
+                        <th><label for="test_user_email">Email</label></th>
+                        <td>
+                            <input type="email" name="test_user_email" id="test_user_email"
+                                   class="regular-text" style="width:300px" placeholder="user@example.com">
+                            <span id="incr-email-status" style="margin-left:8px"></span>
+                            <p class="description">Enter email to auto-fill User ID, or fill User ID directly below.</p>
+                        </td>
+                    </tr>
+                    <tr>
                         <th><label for="test_user_id">User ID</label></th>
-                        <td><input type="number" name="test_user_id" id="test_user_id" min="1" required
+                        <td><input type="number" name="test_user_id" id="test_user_id" min="1"
                                    value="<?php echo esc_attr($saved_user ?: ''); ?>"
                                    class="regular-text" style="width:120px"></td>
                     </tr>
@@ -2795,6 +2830,36 @@ class INCR_Nodes_Admin {
                         renumber();
                     }
                 }
+            });
+
+            // Email lookup
+            var emailInput = document.getElementById('test_user_email');
+            var userIdInput = document.getElementById('test_user_id');
+            var emailStatus = document.getElementById('incr-email-status');
+            var debounceTimer;
+
+            emailInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                var email = emailInput.value.trim();
+                if (!email || email.indexOf('@') === -1) {
+                    emailStatus.textContent = '';
+                    return;
+                }
+                emailStatus.textContent = '...';
+                debounceTimer = setTimeout(function() {
+                    fetch(ajaxurl + '?action=incr_lookup_user_by_email&email=' + encodeURIComponent(email))
+                        .then(function(r) { return r.json(); })
+                        .then(function(res) {
+                            if (res.success) {
+                                userIdInput.value = res.data.user_id;
+                                emailStatus.textContent = '✓ ' + res.data.display;
+                                emailStatus.style.color = '#00a32a';
+                            } else {
+                                emailStatus.textContent = '✗ Not found';
+                                emailStatus.style.color = '#d63638';
+                            }
+                        });
+                }, 400);
             });
         })();
         </script>
