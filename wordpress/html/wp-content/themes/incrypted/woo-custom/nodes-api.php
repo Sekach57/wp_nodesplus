@@ -15,6 +15,12 @@ function proceed_paid_order($order_id): void
         return;
     }
 
+    if ($order->get_meta('_np_api_called') === '1') {
+        return;
+    }
+    $order->update_meta_data('_np_api_called', '1');
+    $order->save_meta_data();
+
     $nodes = [];
     $is_all_prolongation = true;
     $has_prolongation = false;
