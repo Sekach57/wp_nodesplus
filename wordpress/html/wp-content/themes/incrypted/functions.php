@@ -71,6 +71,48 @@ add_action( 'wp_enqueue_scripts', 'incrypted_scripts' );
 /////////////////////////
 add_filter( 'woocommerce_feature_flag_blockified_cart_checkout', '__return_false' );
 
+/**
+ * Restrict checkout to cryptocurrency payments through Whitepay.
+ *
+ * Filtering the available gateways also rejects attempts to submit a removed
+ * payment method directly, while keeping all gateways visible in WooCommerce
+ * settings for administrators.
+ */
+function np_crypto_only_payment_gateways( $gateways ) {
+    if ( is_admin() && ! wp_doing_ajax() ) {
+        return $gateways;
+    }
+
+    return isset( $gateways['whitepay'] )
+        ? [ 'whitepay' => $gateways['whitepay'] ]
+        : [];
+}
+add_filter( 'woocommerce_available_payment_gateways', 'np_crypto_only_payment_gateways', 100 );
+
+/**
+ * Show the crypto-only payment announcement for seven days after deployment.
+ */
+function np_crypto_payment_notice_is_active() {
+    $started_at = get_option( 'np_crypto_payment_notice_started_at', false );
+
+    if ( false === $started_at ) {
+        $started_at = time();
+        add_option( 'np_crypto_payment_notice_started_at', $started_at, '', false );
+    }
+
+    return time() < ( (int) $started_at + WEEK_IN_SECONDS );
+}
+
+function np_crypto_payment_notice_text() {
+    $lang = function_exists( 'pll_current_language' ) ? pll_current_language() : 'uk';
+
+    if ( 'en' === $lang ) {
+        return 'Important: all payments are now accepted only in cryptocurrency.';
+    }
+
+    return 'Важливо: відтепер усі платежі приймаються лише в криптовалюті.';
+}
+
 require get_template_directory() . '/acf-blocks.php';
 require get_template_directory() . '/woo-custom/nodes-functionality.php';
 require get_template_directory() . '/woo-custom/woo-helpers.php';

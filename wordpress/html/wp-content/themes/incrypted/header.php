@@ -23,8 +23,18 @@
     <link rel="stylesheet" href="<?php echo get_template_directory_uri(); ?>/css/fonts.css?ver=1">
 </head>
 
-<body>
+<?php $show_crypto_payment_notice = np_crypto_payment_notice_is_active(); ?>
+<body <?php body_class( $show_crypto_payment_notice ? 'has-crypto-payment-notice' : '' ); ?>>
 <?php wp_body_open(); ?>
+
+<?php if ( $show_crypto_payment_notice ) : ?>
+    <div class="np-crypto-payment-notice" role="status">
+        <div class="container">
+            <span class="np-crypto-payment-notice__mark" aria-hidden="true">!</span>
+            <p><?php echo esc_html( np_crypto_payment_notice_text() ); ?></p>
+        </div>
+    </div>
+<?php endif; ?>
 
 <header class="header">
     <div class="container">
